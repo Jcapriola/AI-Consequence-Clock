@@ -1,0 +1,19 @@
+{
+  "methodology_version": "0.2.2-preview",
+  "generated_at": "2026-09-24T23:03:00-04:00",
+  "dataset_status": "SEED_DEMO",
+  "checksum_algorithm": "SHA-256",
+  "checksum_input": "sorted incident id list, comma-joined",
+  "record_count": 10,
+  "eligible_record_count": 1,
+  "record_ids": [
+    "acc-2024-02-14-air-canada"
+  ],
+  "dataset_checksum_sha256": "515f039fb8608a4ad98d1e600d8b382e9d47976eb9be10db9217b4d90054e6ca",
+  "hero_metric": "sourced_cases_lacking_documented_execution_time_authorization",
+  "hero_count": 1,
+  "hero_record_ids": [
+    "acc-2024-02-14-air-canada"
+  ],
+  "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP and SUBMISSION records stay in the feed."
+}

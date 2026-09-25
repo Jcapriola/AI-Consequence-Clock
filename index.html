@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Consequence Clock™ — Preview</title>
+  <meta name="description" content="Open, auditable measurement of publicly verifiable AI consequences. Preview dashboard with sourced seed records only." />
+  <link rel="canonical" href="https://aimodularity.com/ai-consequence-clock/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://aimodularity.com/ai-consequence-clock/" />
+  <meta property="og:title" content="AI Consequence Clock™ — Preview" />
+  <meta property="og:description" content="Open, auditable measurement of publicly verifiable AI consequences. Preview dashboard with sourced seed records only." />
+  <meta property="og:image" content="https://aimodularity.com/ai-consequence-clock/assets/concept-render.png" />
+  <meta property="og:image:secure_url" content="https://aimodularity.com/ai-consequence-clock/assets/concept-render.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1672" />
+  <meta property="og:image:height" content="941" />
+  <meta property="og:image:alt" content="AI Consequence Clock dashboard preview with neon incident counters and global metrics." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AI Consequence Clock™ — Preview" />
+  <meta name="twitter:description" content="Open, auditable measurement of publicly verifiable AI consequences. Preview dashboard with sourced seed records only." />
+  <meta name="twitter:image" content="https://aimodularity.com/ai-consequence-clock/assets/concept-render.png" />
+  <meta name="twitter:image:alt" content="AI Consequence Clock dashboard preview with neon incident counters and global metrics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/clock.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="banner">
+      <div>
+        <strong>PREVIEW / SEED DATASET — NOT A GLOBAL TOTAL.</strong>
+        Every number on this page is derived from the 10 sourced records in
+        <code>data/incidents.json</code>. The concept artwork’s multi-million counters are illustrative only and are not used here.
+        AI discovers. Evidence verifies. Sources remain visible.
+      </div>
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <h1><span class="ai">AI CONSEQUENCE</span> <span class="clock">CLOCK™</span></h1>
+        <p class="sub">Preview indicators for autonomous and agentic AI risk · methodology v0.2.2-preview</p>
+      </div>
+      <div class="meta">
+        <div class="live"><i></i> UPDATED FROM SEED FILE</div>
+        <div id="updated">loading…</div>
+        <nav class="nav">
+          <a href="./methodology.html">Methodology</a>
+          <a href="./data/incidents.json">Data</a>
+          <a href="./data/summary.json">Summary</a>
+          <a href="./IMPLEMENTATION_PROPOSAL.md">Implementation proposal</a>
+          <a href="https://aimodularity.com">AI Modularity</a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="grid kpis">
+      <article class="card clickable" onclick="openList()">
+        <div class="label">Known AI security incidents</div>
+        <div class="value orange" id="kpi-known">—</div>
+        <div class="delta">Headline-eligible <b id="headline-count">0</b> of <b id="record-count">0</b> seed records</div>
+      </article>
+      <article class="card clickable" onclick="openList('agent')">
+        <div class="label">Agent-caused incidents</div>
+        <div class="value red" id="kpi-agent">—</div>
+        <div class="delta">causal_role = agent_initiated or agent_executed</div>
+      </article>
+      <article class="card clickable" onclick="openList('unauthorized')">
+        <div class="label">Unauthorized AI actions</div>
+        <div class="value amber" id="kpi-unauth">—</div>
+        <div class="delta">unauthorized_claim = true only · not an auth-gap proxy</div>
+      </article>
+      <article class="card clickable" onclick="openList('data_exposure')">
+        <div class="label">AI-related data exposures</div>
+        <div class="value cyan" id="kpi-expose">—</div>
+        <div class="delta">Exposed, leaked, or inappropriately accessed data</div>
+      </article>
+      <article class="card">
+        <div class="label">Documented financial losses</div>
+        <div class="value green" id="kpi-money">—</div>
+        <div class="delta">Confirmed amounts only · estimates excluded</div>
+      </article>
+    </section>
+
+    <section class="grid mid">
+      <article class="card days">
+        <div class="label">Days since latest disclosure in seed</div>
+        <div class="value" id="days-since">—</div>
+        <ul class="mini-list" id="prev-incidents"></ul>
+      </article>
+
+      <article class="card hero clickable" onclick="openList('no_auth')">
+        <div class="label">Sourced cases lacking documented execution-time authorization</div>
+        <div class="hero-value" id="hero-value">—</div>
+        <p class="note">
+          Counted only when <code>authorization_evidence = none_documented</code> on a
+          headline-eligible record. Separate from <code>unauthorized_claim</code>.
+          Not a modeled global rate and not the concept-art 8.8 billion figure.
+        </p>
+      </article>
+
+      <article class="card">
+        <div class="label">Seed category mix</div>
+        <div class="cats" id="cats"></div>
+        <div class="delta" style="margin-top:12px">Disclosure lag · <b id="lag">—</b> day average across <span id="lag-n">0</span> dated records</div>
+      </article>
+    </section>
+
+    <section class="grid support">
+      <article class="card clickable" onclick="openList('prompt_injection')">
+        <div class="label">Prompt-injection incidents</div>
+        <div class="value amber" id="kpi-prompt">—</div>
+        <div class="delta">Material change in behavior or exposure</div>
+      </article>
+      <article class="card">
+        <div class="label">Human interventions required</div>
+        <div class="value cyan" id="kpi-human">—</div>
+        <div class="delta">Stop, override, or emergency action documented</div>
+      </article>
+      <article class="card">
+        <div class="label">Actions reversed / rolled back</div>
+        <div class="value green" id="kpi-rollback">—</div>
+        <div class="delta">Documented revert after an agent action</div>
+      </article>
+      <article class="card">
+        <div class="label">Regulatory actions / fines</div>
+        <div class="value amber" id="kpi-reg">—</div>
+        <div class="delta">None in this seed · field reserved</div>
+      </article>
+    </section>
+
+    <section class="grid lower">
+      <article class="card">
+        <div class="label">Geography in seed (only where sources support it)</div>
+        <div class="map-wrap">
+          <svg viewBox="0 0 400 220" aria-hidden="true">
+            <rect width="400" height="220" fill="transparent" />
+            <path d="M40 70 l30 8 22-18 40 6 18 22-10 28-36 10-28-16z" fill="rgba(94,231,255,0.08)" stroke="rgba(94,231,255,0.25)"/>
+            <path d="M150 48 l70 4 18 26-8 34-46 16-48-10-12-30z" fill="rgba(94,231,255,0.08)" stroke="rgba(94,231,255,0.25)"/>
+            <path d="M250 56 l80 10 18 28-26 36-62 8-28-22z" fill="rgba(94,231,255,0.08)" stroke="rgba(94,231,255,0.25)"/>
+            <path d="M80 150 l40 6 16 20-30 14-34-8z" fill="rgba(94,231,255,0.07)" stroke="rgba(94,231,255,0.2)"/>
+            <circle class="dot" cx="92" cy="86" r="4" /><!-- US -->
+            <circle class="dot" cx="108" cy="72" r="3" /><!-- Canada -->
+            <circle class="dot" cx="300" cy="128" r="4" /><!-- Australia -->
+            <circle class="dot" cx="318" cy="86" r="3" /><!-- Korea -->
+          </svg>
+          <div class="legend" id="regions"></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="label">Incident feed · disclosure date</div>
+        <div class="feed" id="feed"></div>
+      </article>
+
+      <article class="card">
+        <div class="label">Disclosure trend in seed</div>
+        <canvas class="chart" id="trend"></canvas>
+      </article>
+    </section>
+
+    <section class="card trust">
+      <h2>Public limitation</h2>
+      <p>
+        AI Consequence Clock tracks publicly observable and independently verifiable AI-related
+        incidents and consequences. It does not represent every incident. Many events are
+        undisclosed, discovered later, or reported after significant delay. Counts reflect only
+        events supported by attributable evidence as of the last update.
+      </p>
+      <p>
+        <strong style="color:#e8f4ff">AI discovers. Evidence verifies. Sources remain visible.</strong>
+        Neutral measurement page — not a product advertisement. Execution-authorization
+        classification follows the published methodology, not brand claims.
+      </p>
+    </section>
+
+    <footer class="footer">
+      <div>AI CONSEQUENCE CLOCK™ · AI Blockchain Ventures LLC / AI Modularity · Seed preview</div>
+      <div>Not investment or legal advice · <span id="repro">methodology loading…</span></div>
+    </footer>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="sheet">
+      <button class="close" type="button">Close</button>
+      <h2 id="sheet-title">Records</h2>
+      <p style="color:#8aa0b8">Click a source to leave this preview. Status labels are part of the data model, not decoration.</p>
+      <div id="sheet-body"></div>
+    </div>
+  </div>
+  <script src="./js/clock.js"></script>
+</body>
+</html>
