@@ -21,7 +21,9 @@ If you changed a record, the suite fails until you run `node tests/update-expect
 
 Run the validator first. It catches the class of error the arithmetic cannot: a record whose `verification_status` reads `verified` in lowercase computes perfectly and silently drops out of every headline total, so the clock gets quieter and nothing reports an error anywhere. Field values are case-sensitive on purpose.
 
-If you add a source, run `node tests/find-archives.js` so the URL is checked against the Internet Archive and a snapshot is recorded where one exists. If the lookup fails, leave the fields untouched and say so in the pull request. Never write "no snapshot" for a lookup that did not complete — recording an absence you did not observe is the one thing this project cannot do.
+If you add a source, run `node tests/find-archives.js` so the URL is checked against the Internet Archive and a snapshot is recorded where one exists. It skips sources already resolved, so it will only look up yours. If the lookup fails, leave the fields untouched and say so in the pull request. Never write "no snapshot" for a lookup that did not complete — recording an absence you did not observe is the one thing this project cannot do.
+
+Prefer a source URL that a web archive can actually capture. Authoritative JSON APIs give the most exact data and the least durable citation: every unarchivable source in this dataset is an API endpoint. If the only good source is an API, say so in `source_quality_basis` rather than pretending the link will outlive the service.
 
 If you changed a record, regenerate the CSV with `node tests/export-csv.js` and commit it, so the generated file never disagrees with the JSON it came from.
 

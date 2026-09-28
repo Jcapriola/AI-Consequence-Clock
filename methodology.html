@@ -185,6 +185,30 @@
       verified from unverified evidence cannot let its own tooling assert an absence it
       never observed.
     </p>
+    <p>
+      Current state across twenty-nine source URLs: fourteen have a recorded snapshot,
+      twelve are confirmed to have none, and three remain unresolved because the lookup did
+      not complete. The unresolved three carry no archive fields at all, which is how an
+      unchecked source is distinguished from a source checked and found to have no copy.
+    </p>
+    <p>
+      The confirmed absences are informative rather than incidental. Almost all of them are
+      machine-readable API endpoints: the MITRE CVE Services endpoints under
+      <code>cveawg.mitre.org/api/cve/</code> and the NVD endpoints under
+      <code>services.nvd.nist.gov/rest/</code>. Web archives crawl pages, not JSON APIs, so
+      these URLs are structurally unarchivable. The equivalent human-readable pages are
+      archived: the NVD record for CVE-2024-8309 has a snapshot from 30 October 2024.
+    </p>
+    <p>
+      This is a genuine durability weakness in our own citations, and it is recorded here
+      rather than quietly fixed. Reading an authoritative API gives the most exact data and
+      the least durable reference. The consequence is that the CVE records in this dataset
+      rest on primary sources that a reader in ten years may not be able to retrieve at the
+      cited address, even though the underlying record will still exist. Resolving it means
+      deciding which URL is the citation of record for a CVE, which changes published
+      records and is therefore a decision for the canonical owner, not a change to slip
+      into a contribution.
+    </p>
 
     <h2>Corrections, revisions, and the pinned baseline</h2>
     <p>

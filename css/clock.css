@@ -607,6 +607,17 @@ body {
 }
 .cite a { color: var(--cyan-2); font-weight: 600; }
 .cite-date { color: var(--dim); font-family: var(--mono); font-size: 11.5px; }
+/* Deliberately quieter than the live source. It is a fallback route to the same evidence,
+   not a second independent citation, and must not read as one. */
+.cite-archive {
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--dim);
+}
+.cite-archive:hover,
+.cite-archive:focus-visible { color: var(--cyan-2); border-bottom-color: var(--cyan-2); }
 .cite-title { display: block; color: var(--muted); }
 .changes li {
   padding: 8px 0;

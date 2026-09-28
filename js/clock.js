@@ -171,11 +171,29 @@
         var inner = url
           ? '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + label + "</a>"
           : label + " (no usable link)";
+
+        /*
+         * The archive link is the reader's recourse when the live URL dies, so it is shown
+         * rather than held in the data. It runs through the same URL check as any other
+         * record field: archived_url arrives from the dataset and is not privileged.
+         * A source with no archive says nothing here, because absence of a snapshot is not
+         * a property of the source worth announcing on every row.
+         */
+        var archived = s.archived_url ? safeUrl(s.archived_url) : null;
+        var archiveLink = archived
+          ? ' <a class="cite-archive" href="' +
+            archived +
+            '" target="_blank" rel="noopener noreferrer">archived' +
+            (s.archived_at ? " " + esc(s.archived_at) : "") +
+            "</a>"
+          : "";
+
         return (
           '<li class="cite">' +
           inner +
           (grade ? ' <span class="status">' + grade + "</span>" : "") +
           (s.publication_date ? ' <span class="cite-date">' + esc(s.publication_date) + "</span>" : "") +
+          archiveLink +
           (s.title ? '<span class="cite-title">' + esc(s.title) + "</span>" : "") +
           "</li>"
         );

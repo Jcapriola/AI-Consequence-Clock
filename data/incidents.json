@@ -43,7 +43,9 @@
           "title": "Car-dealer GPT chatbot manipulated into $1 sale agreement",
           "publication_date": "2023-12-17",
           "source_type": "incident_database",
-          "evidence_grade": "ROUNDUP"
+          "evidence_grade": "ROUNDUP",
+          "archived_url": "https://web.archive.org/web/20260531091722/https://aiincidents.org/explorer/",
+          "archived_at": "2026-05-31"
         }
       ],
       "source_quality_basis": "Only an incident-database explorer / roundup link is attached.",
@@ -89,7 +91,9 @@
           "title": "Moffatt v. Air Canada, 2024 BCCRT 149",
           "publication_date": "2024-02-14",
           "source_type": "court_tribunal",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": "https://web.archive.org/web/20240215031504/https://decisions.civilresolutionbc.ca/crt/crtd/en/item/525448/index.do",
+          "archived_at": "2024-02-15"
         },
         {
           "url": "https://www.bbc.com/travel/article/20240222-air-canada-chatbot-misinformation-what-travellers-should-know",
@@ -97,7 +101,9 @@
           "title": "Air Canada chatbot misinformation",
           "publication_date": "2024-02-23",
           "source_type": "news",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": "https://web.archive.org/web/20240223102306/https://www.bbc.com/travel/article/20240222-air-canada-chatbot-misinformation-what-travellers-should-know",
+          "archived_at": "2024-02-23"
         }
       ]
     },
@@ -185,7 +191,9 @@
           "title": "CamoLeak — GitHub Copilot Silent Code Exfiltration",
           "publication_date": "2025-06-01",
           "source_type": "security_research_roundup",
-          "evidence_grade": "ROUNDUP"
+          "evidence_grade": "ROUNDUP",
+          "archived_url": "https://web.archive.org/web/20260515143129/https://rafter.so/blog/incidents/ai-agent-security-timeline-2025-2026",
+          "archived_at": "2026-05-15"
         },
         {
           "url": "https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code",
@@ -193,7 +201,9 @@
           "title": "CamoLeak: Critical GitHub Copilot Vulnerability Leaks Private Source Code",
           "publication_date": "2025-10-08",
           "source_type": "researcher_advisory",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": "https://web.archive.org/web/20251008162359/https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code",
+          "archived_at": "2025-10-08"
         },
         {
           "url": "https://www.securityweek.com/github-copilot-chat-flaw-leaked-data-from-private-repositories/",
@@ -201,7 +211,9 @@
           "title": "GitHub Copilot Chat Flaw Leaked Data From Private Repositories",
           "publication_date": "2025-10-09",
           "source_type": "news",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": "https://web.archive.org/web/20251009105401/https://www.securityweek.com/github-copilot-chat-flaw-leaked-data-from-private-repositories/",
+          "archived_at": "2025-10-09"
         }
       ],
       "source_quality_basis": "Researcher advisory by Omer Mayraz of Legit Security, the party who found and reported the vulnerability through HackerOne, plus one independent secondary report. The advisory states CVSS 9.6, the Camo-based CSP bypass, and that GitHub confirmed a fix on 14 August 2025. The original roundup is retained so the prior basis stays visible.",
@@ -251,7 +263,9 @@
           "title": "Replit AI Agent Deletes Production Database",
           "publication_date": "2025-07-21",
           "source_type": "security_research_roundup",
-          "evidence_grade": "ROUNDUP"
+          "evidence_grade": "ROUNDUP",
+          "archived_url": "https://web.archive.org/web/20260515143129/https://rafter.so/blog/incidents/ai-agent-security-timeline-2025-2026",
+          "archived_at": "2026-05-15"
         },
         {
           "url": "https://www.businessinsider.com/replit-ceo-apologizes-ai-coding-tool-delete-company-database-2025-7",
@@ -267,7 +281,9 @@
           "title": "'I destroyed months of your work in seconds' says AI coding tool after deleting a dev's entire database during a code freeze",
           "publication_date": "2025-07-21",
           "source_type": "news",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": "https://web.archive.org/web/20250721150811/https://www.pcgamer.com/software/ai/i-destroyed-months-of-your-work-in-seconds-says-ai-coding-tool-after-deleting-a-devs-entire-database-during-a-code-freeze-i-panicked-instead-of-thinking/",
+          "archived_at": "2025-07-21"
         }
       ],
       "source_quality_basis": "Two independent secondary reports agree on the material facts: the deletion during an active freeze, the 1,206 and 1,196+ record counts quoted from the agent's own output, the agent's false claim that rollback was impossible, and the public acknowledgment by Replit CEO Amjad Masad. No primary postmortem has been published, so the record stays CORROBORATED rather than VERIFIED. The original roundup is retained so the prior basis stays visible.",
@@ -307,7 +323,9 @@
           "title": "5 Agentic AI Security Incidents & Vulnerabilities",
           "publication_date": "2026-08-03",
           "source_type": "security_research_roundup",
-          "evidence_grade": "ROUNDUP"
+          "evidence_grade": "ROUNDUP",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "Only a secondary compilation is attached. Wiz primary write-up not attached.",
@@ -347,7 +365,9 @@
           "title": "Agent-Inflicted Damage: Inside the Real-World Failures of Enterprise AI Systems",
           "publication_date": "2026-09-17",
           "source_type": "security_research",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": "https://web.archive.org/web/20260605001737/https://www.cyera.com/research/agent-inflicted-damage-inside-the-real-world-failures-of-enterprise-ai-systems",
+          "archived_at": "2026-06-05"
         }
       ],
       "source_quality_basis": "Single independent secondary research article. Guardian / company primary not attached.",
@@ -387,7 +407,9 @@
           "title": "OpenAI Agents Probed Websites for Vulnerabilities While Fetching Public Data",
           "publication_date": "2026-09-24",
           "source_type": "news",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": "https://web.archive.org/web/20260924153931/https://www.securityweek.com/openai-agents-probed-websites-for-vulnerabilities-while-fetching-public-data/",
+          "archived_at": "2026-09-24"
         }
       ],
       "source_quality_basis": "Single independent secondary news report. Australian government primary statement not attached. One independent secondary only; CORROBORATED requires two.",
@@ -427,7 +449,9 @@
           "title": "Prompt-Injection Bug Hits $4B Agentic AI App 'Manus'",
           "publication_date": "2026-09-24",
           "source_type": "news",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": "https://web.archive.org/web/20260924172459/https://www.darkreading.com/application-security/prompt-injection-bug-agentic-ai-app-manus",
+          "archived_at": "2026-09-24"
         }
       ],
       "source_quality_basis": "Single independent secondary news report of Salt Labs research. Lab advisory not attached. One independent secondary only; CORROBORATED requires two.",
@@ -478,7 +502,9 @@
           "title": "Model-judged safe command auto-execution defeated by prompt injection (CVE-2026-30306)",
           "publication_date": "2026-03-30",
           "source_type": "incident_database",
-          "evidence_grade": "ROUNDUP"
+          "evidence_grade": "ROUNDUP",
+          "archived_url": "https://web.archive.org/web/20260531091722/https://aiincidents.org/explorer/",
+          "archived_at": "2026-05-31"
         },
         {
           "url": "https://cveawg.mitre.org/api/cve/CVE-2026-30306",
@@ -486,7 +512,9 @@
           "title": "CVE-2026-30306 record, state PUBLISHED",
           "publication_date": "2026-03-30",
           "source_type": "cve_record",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         },
         {
           "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2026-30306",
@@ -494,7 +522,9 @@
           "title": "CVE-2026-30306, vulnStatus Analyzed, CVSS 3.1 base score 9.8 CRITICAL, CWE-94",
           "publication_date": "2026-03-30",
           "source_type": "government_vulnerability_database",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "CVE Program record from the assigning authority, state PUBLISHED, plus the analyzed NVD record. Both give the affected product as cpe:2.3:a:rahmanazhar:sakadev with versionEndExcluding 4.0.6, CVSS 3.1 base score 9.8 CRITICAL, and CWE-94. The CISA ADP block records SSVC exploitation as none and automatable as yes. The original roundup is retained so the prior basis stays visible.",
@@ -535,7 +565,9 @@
           "title": "CVE-2026-22708 record, state PUBLISHED",
           "publication_date": "2026-01-14",
           "source_type": "cve_record",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         },
         {
           "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2026-22708",
@@ -543,7 +575,9 @@
           "title": "CVE-2026-22708, vulnStatus Analyzed, CVSS 3.1 base score 9.8 CRITICAL, CWE-77, CWE-78, CWE-94, CWE-269",
           "publication_date": "2026-01-14",
           "source_type": "government_vulnerability_database",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "CVE Program record from the assigning CNA (GitHub_M), state PUBLISHED, plus the analyzed NVD record. Both give the affected product as cpe:2.3:a:anysphere:cursor with versionEndExcluding 2.3 and CVSS 3.1 base score 9.8 CRITICAL, vector AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H. No CISA SSVC assessment and no KEV entry were published for this CVE at the time of review, so no exploitation status is claimed in either direction. This record documents a demonstrated capability, not an event.",
@@ -584,7 +618,9 @@
           "title": "CVE-2026-22686 record, state PUBLISHED",
           "publication_date": "2026-01-13",
           "source_type": "cve_record",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         },
         {
           "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2026-22686",
@@ -592,7 +628,9 @@
           "title": "CVE-2026-22686, vulnStatus Analyzed, CVSS 3.1 base score 10.0 CRITICAL, CWE-94, CWE-693",
           "publication_date": "2026-01-13",
           "source_type": "government_vulnerability_database",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "CVE Program record from the assigning CNA (GitHub_M), state PUBLISHED, plus the analyzed NVD record. Both give the affected product as cpe:2.3:a:agentfront:enclave with versionEndExcluding 2.7.0 and CVSS 3.1 base score 10.0 CRITICAL, vector AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H, CWE-94 and CWE-693. No CISA SSVC assessment and no KEV entry were published for this CVE at the time of review, so no exploitation status is claimed in either direction. This record documents a demonstrated capability, not an event.",
@@ -633,7 +671,9 @@
           "title": "CVE-2026-40088 record, state PUBLISHED",
           "publication_date": "2026-04-09",
           "source_type": "cve_record",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         },
         {
           "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2026-40088",
@@ -641,7 +681,9 @@
           "title": "CVE-2026-40088, vulnStatus Analyzed, CVSS 3.1 base score 9.6 CRITICAL, CWE-78",
           "publication_date": "2026-04-09",
           "source_type": "government_vulnerability_database",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "CVE Program record from the assigning CNA (GitHub_M), state PUBLISHED, plus the analyzed NVD record. Both give the affected product as cpe:2.3:a:praison:praisonai with versionEndExcluding 4.5.121 and CVSS 3.1 base score 9.6 CRITICAL, vector AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H, CWE-78. No CISA SSVC assessment and no KEV entry were published for this CVE at the time of review, so no exploitation status is claimed in either direction. This record documents a demonstrated capability, not an event.",
@@ -682,7 +724,9 @@
           "title": "CVE-2026-52870 record, state PUBLISHED",
           "publication_date": "2026-07-15",
           "source_type": "cve_record",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         },
         {
           "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2026-52870",
@@ -690,7 +734,9 @@
           "title": "CVE-2026-52870, vulnStatus Analyzed, CVSS 3.1 base score 7.6 HIGH, CWE-862",
           "publication_date": "2026-07-15",
           "source_type": "government_vulnerability_database",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "CVE Program record from the assigning CNA (GitHub_M), state PUBLISHED, plus the analyzed NVD record. Both give the affected product as cpe:2.3:a:lfprojects:mcp_python_sdk with versionStartIncluding 1.23.0 and versionEndExcluding 1.27.2, CVSS 3.1 base score 7.6 HIGH, vector AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:L/A:L, CWE-862. causal_role is recorded as unknown because the flaw is a missing authorization check in a library, and no agent action is documented as the cause. No CISA SSVC assessment and no KEV entry were published for this CVE at the time of review, so no exploitation status is claimed in either direction. This record documents a demonstrated capability, not an event.",
@@ -739,7 +785,9 @@
           "title": "CVE-2024-8309, vulnStatus Analyzed, CVSS 3.1 base score 9.8 CRITICAL, CWE-89, CWE-74",
           "publication_date": "2024-10-29",
           "source_type": "government_vulnerability_database",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "CVE Program record from the assigning CNA (@huntr_ai), state PUBLISHED, plus the analyzed NVD record. NVD gives cpe:2.3:a:langchain:langchain:0.2.5 and CVSS 3.1 base score 9.8 CRITICAL, vector AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H, CWE-89 and CWE-74. The two records describe the affected range differently and both statements are recorded rather than reconciled. No CISA SSVC assessment and no KEV entry were published for this CVE at the time of review, so no exploitation status is claimed in either direction. This record documents a demonstrated capability, not an event.",
@@ -780,7 +828,9 @@
           "title": "Ayinde v London Borough of Haringey and Al-Haroun v Qatar National Bank, [2025] EWHC 1383 (Admin), approved judgment",
           "publication_date": "2025-06-06",
           "source_type": "court_tribunal",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": "https://web.archive.org/web/20250606190237/https://www.judiciary.uk/wp-content/uploads/2025/06/Ayinde-v-London-Borough-of-Haringey-and-Al-Haroun-v-Qatar-National-Bank.pdf",
+          "archived_at": "2025-06-06"
         },
         {
           "url": "https://www.bailii.org/ew/cases/EWHC/Admin/2025/1383.html",
@@ -788,7 +838,9 @@
           "title": "Ayinde, R (on the application of) v London Borough of Haringey [2025] EWHC 1383 (Admin)",
           "publication_date": "2025-06-06",
           "source_type": "court_tribunal",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": "https://web.archive.org/web/20250606171337/https://www.bailii.org/ew/cases/EWHC/Admin/2025/1383.html",
+          "archived_at": "2025-06-06"
         }
       ],
       "source_quality_basis": "Approved judgment of a Divisional Court (Dame Victoria Sharp P and Johnson J), handed down 6 June 2025 and published by the Judiciary of England and Wales, with the same text available from BAILII. Paragraph 74 records the schedule of forty five citations and the eighteen that do not exist. Paragraph 76 records the claimant's statement that the citations were generated using publicly available artificial intelligence tools. No monetary figure is recorded on this record: the GBP 89.4 million in the claim is the sum sought in the underlying dispute and is not a loss, and the wasted costs orders of GBP 2,000 each were made in the companion Ayinde matter, not in Al-Haroun.",
