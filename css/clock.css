@@ -14,7 +14,11 @@
   --orange: #ff9f43;
   --text: #e8f4ff;
   --muted: #8aa0b8;
-  --dim: #5d738c;
+  /* Measured, not guessed. At #5d738c this token rendered 3.82:1 against the composited
+     card background, failing WCAG 1.4.3 for the small text it is used on: table headers,
+     timestamps, and the axis definitions. Raised until it clears 4.5:1 on that backdrop
+     while keeping the same hue, so the visual hierarchy is unchanged. */
+  --dim: #6d84a0;
   --shadow: 0 0 0 1px rgba(94, 231, 255, 0.08), 0 18px 50px rgba(0, 0, 0, 0.45);
   --mono: "Share Tech Mono", "IBM Plex Mono", ui-monospace, monospace;
   --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
@@ -124,6 +128,8 @@ body {
 .kpis { grid-template-columns: repeat(5, 1fr); }
 .mid { grid-template-columns: 240px 1fr 300px; }
 .axes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* The time view is one card, so it takes the full row instead of leaving a dead column. */
+.axes-single { grid-template-columns: minmax(0, 1fr); }
 
 .card {
   background: var(--card);
@@ -423,6 +429,86 @@ body {
   text-transform: capitalize;
 }
 .axis-link:hover { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; }
+.cite-card {
+  margin-top: 18px;
+}
+.cite-title {
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan-2);
+}
+.cite-sub {
+  margin: 16px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cite-note {
+  margin: 0 0 10px;
+  max-width: 78ch;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+.cite-note code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--cyan-2);
+}
+.cite-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 4px;
+}
+.cite-dl {
+  border: 1px solid var(--stroke-strong);
+  border-radius: 6px;
+  padding: 7px 13px;
+  color: var(--text);
+  font-size: 12.5px;
+  text-decoration: none;
+}
+.cite-dl:hover,
+.cite-dl:focus-visible {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+/* A citation is copied, so it must survive selection as one block of text. */
+.cite-block {
+  margin: 0 0 14px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(3, 7, 18, 0.55);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+/* The bar restates the adjacent number visually. A zero count gets no bar at all rather
+   than a hairline, so "none" never looks like "a little". */
+.axis-bar {
+  display: block;
+  margin-top: 6px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(94, 231, 255, 0.1);
+}
+.axis-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--cyan);
+}
+
 .axis-def {
   display: block;
   margin-top: 4px;

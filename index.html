@@ -141,6 +141,22 @@
       <article class="card axis-card" id="axis-consequence"></article>
     </section>
 
+    <!-- Kept out of the four-axis grid on purpose. The four axes above are the ones the
+         brief names. Time is a different kind of cut: it measures when evidence became
+         public, which is partly a fact about this dataset's coverage rather than about
+         the world. Presenting it as a fifth peer axis would overstate it. -->
+    <h2 class="section-head" id="over-time">Over time</h2>
+    <p class="section-note">
+      Grouped by the year a record was disclosed, not the year it happened, because a
+      disclosure date exists on every record while incident dates are often approximate or
+      unknown. A rising count measures disclosure and this dataset's growing coverage. It is
+      not a measurement of how often these events occur.
+    </p>
+
+    <section class="grid axes axes-single" aria-label="Breakdown over time">
+      <article class="card axis-card" id="axis-year"></article>
+    </section>
+
     <h2 class="section-head">Every record</h2>
     <section class="card">
       <div class="label">Disclosure feed · newest first · counted and not counted</div>
@@ -164,6 +180,31 @@
         <strong class="bright">AI discovers. Evidence verifies. Sources remain visible.</strong>
         Neutral measurement page — not a product advertisement. Execution-authorization
         classification follows the published methodology, not brand claims.
+      </p>
+    </section>
+
+    <!-- Researchers who cannot cite this cannot use it, and a dataset that cannot be
+         cited gets paraphrased instead, which is how a careful figure becomes a loose
+         claim. The version and access date are what make a citation checkable later. -->
+    <section class="card cite-card" aria-labelledby="cite-title">
+      <h2 id="cite-title" class="cite-title">Use and cite this data</h2>
+      <p class="cite-note">
+        The JSON is the record of truth. The CSV is generated from it for spreadsheet and
+        statistical work. To reproduce the figures shown above, filter to rows where
+        <code>in_headline_totals</code> is <code>yes</code>; the other rows are published
+        for transparency and are deliberately not counted here.
+      </p>
+      <p class="cite-downloads">
+        <a class="cite-dl" href="./data/incidents.json" download>Download JSON</a>
+        <a class="cite-dl" href="./data/incidents.csv" download>Download CSV</a>
+        <a class="cite-dl" href="./methodology.html">Read the methodology</a>
+      </p>
+      <h3 class="cite-sub">Suggested citation</h3>
+      <p class="cite-block" id="cite-block">Citation loading.</p>
+      <p class="cite-note">
+        Amounts are reported per currency and never summed across currencies. Confirmed and
+        estimated figures are separate fields and are never combined. Records carrying no
+        region their sources establish are reported as not established, not as a country.
       </p>
     </section>
 

@@ -145,6 +145,47 @@
       nothing happened. It counts as a demonstrated capability and not as an event.
     </p>
 
+    <h2>Grouping by year, and what a rising line does not mean</h2>
+    <p>
+      A fifth view groups records by year. It is deliberately kept out of the four-axis
+      grid above, because it is a weaker kind of measurement and presenting it as a peer
+      of the four named axes would overstate it.
+    </p>
+    <p>
+      The year is the <strong>year of disclosure, not the year of occurrence</strong>.
+      Every record carries a disclosure date, because a record exists only once its
+      evidence is public. Incident dates are frequently approximate, contested, or simply
+      unknown, and several records here carry a month with no day. Grouping by incident
+      date would therefore require inventing precision the sources do not support.
+    </p>
+    <p>
+      The consequence is that a rising count over time measures two things at once: how
+      much was disclosed, and how much this dataset has so far collected. It does not
+      measure how often these events occur. A quiet year in this view is not evidence of
+      a safer year, and a busy year is not evidence of a more dangerous one. Anyone
+      reading a trend off this view is reading a trend in disclosure and in our own
+      coverage. That limitation is a property of the data, not a defect we intend to fix
+      by estimating around it.
+    </p>
+
+    <h2>Archiving sources, and the difference between absent and unchecked</h2>
+    <p>
+      A citation that stops resolving cannot be checked, and an unverifiable citation is
+      indistinguishable from no citation. Sources are therefore looked up in the Internet
+      Archive and, where a snapshot exists, the snapshot URL and its date are recorded
+      alongside the live URL.
+    </p>
+    <p>
+      The tooling distinguishes three outcomes and never collapses them: a snapshot was
+      found, no snapshot exists, or the lookup itself failed. The third is not the second.
+      During this work the archive returned rate-limit and then outage responses, and a
+      first implementation recorded "no snapshot exists" for twenty-nine sources when the
+      truth was "the archive was unreachable." Those entries were removed and the tool was
+      changed to leave a source untouched when a lookup fails. A project that separates
+      verified from unverified evidence cannot let its own tooling assert an absence it
+      never observed.
+    </p>
+
     <h2>Corrections, revisions, and the pinned baseline</h2>
     <p>
       A record that changes carries an incremented <code>revision</code> and a

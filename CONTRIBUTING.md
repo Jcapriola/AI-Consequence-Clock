@@ -10,7 +10,20 @@ Canonical project control stays with AI Blockchain Ventures LLC / AI Modularity.
 4. Do not commit secrets, admin tokens, or private incident material.
 5. Credit may appear in CONTRIBUTORS. Credit is not ownership.
 
-Before opening a pull request, run `node tests/derive.test.js`. If you changed a record, the suite fails until you run `node tests/update-expected.js` and include the resulting baseline diff — that diff is how a reviewer sees which published totals your change moved.
+Before opening a pull request, run both:
+
+```bash
+node tests/validate-records.js   # field vocabulary and shape
+node tests/derive.test.js        # every published total
+```
+
+If you changed a record, the suite fails until you run `node tests/update-expected.js` and include the resulting baseline diff — that diff is how a reviewer sees which published totals your change moved.
+
+Run the validator first. It catches the class of error the arithmetic cannot: a record whose `verification_status` reads `verified` in lowercase computes perfectly and silently drops out of every headline total, so the clock gets quieter and nothing reports an error anywhere. Field values are case-sensitive on purpose.
+
+If you add a source, run `node tests/find-archives.js` so the URL is checked against the Internet Archive and a snapshot is recorded where one exists. If the lookup fails, leave the fields untouched and say so in the pull request. Never write "no snapshot" for a lookup that did not complete — recording an absence you did not observe is the one thing this project cannot do.
+
+If you changed a record, regenerate the CSV with `node tests/export-csv.js` and commit it, so the generated file never disagrees with the JSON it came from.
 
 Two rules for code touching the page:
 

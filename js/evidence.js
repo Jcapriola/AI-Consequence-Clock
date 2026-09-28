@@ -80,8 +80,15 @@
     return record.adversary === "research_demo" ? "demonstrated" : "documented";
   }
 
+  /*
+   * causal_role describes the mechanism a source attributes the behaviour to. On a
+   * vulnerability record it describes what the flaw would let an agent do, not
+   * something an agent did. Counting those as agent-caused would report capabilities
+   * as events, so the count is restricted to documented occurrences. Demonstrated
+   * capabilities are reported separately and never folded into this number.
+   */
   function isAgentCaused(record) {
-    return has(AGENT_ROLES, record.causal_role);
+    return has(AGENT_ROLES, record.causal_role) && occurrence(record) === "documented";
   }
 
   function isAuthGap(record) {
@@ -171,6 +178,21 @@
       key: "consequence_class",
       title: "Consequence",
       note: "What the sources show was actually affected."
+    },
+    /*
+     * Year of disclosure, not of occurrence. Disclosure is the date the evidence became
+     * public and is present on every record; incident dates are often unknown or
+     * approximate, so grouping by them would invent precision. A rising count here
+     * measures disclosure and this dataset's own coverage, not the rate of events.
+     */
+    year: {
+      value: function (record) {
+        var d = record.disclosure_date;
+        return d && /^\d{4}/.test(d) ? d.slice(0, 4) : null;
+      },
+      title: "Year of disclosure",
+      note: "When the evidence became public, not when the event happened. Counts reflect disclosure and this dataset's coverage.",
+      order: "value"
     }
   };
 
@@ -185,7 +207,7 @@
     var groups = {};
 
     records.forEach(function (record) {
-      var raw = record[axis.key];
+      var raw = axis.value ? axis.value(record) : record[axis.key];
       var supported = axisName === "country" ? geographySupported(record) : !!raw;
       // Readable sentinel: this value appears in shareable deep links.
       var value = supported ? raw : "not-established";
@@ -224,8 +246,10 @@
         return groups[k];
       })
       .sort(function (a, b) {
-        // Unsupported geography sorts last so it never reads as a country.
+        // Unsupported values sort last so they never read as a real group.
         if (a.supported !== b.supported) return a.supported ? -1 : 1;
+        // A time axis must stay in time order. Sorting years by size would hide the shape.
+        if (axis.order === "value") return a.value < b.value ? -1 : a.value > b.value ? 1 : 0;
         if (b.headline !== a.headline) return b.headline - a.headline;
         if (b.total !== a.total) return b.total - a.total;
         return a.label.localeCompare(b.label);
@@ -308,7 +332,8 @@
         country: groupByAxis(records, "country"),
         sector: groupByAxis(records, "sector"),
         vulnerability: groupByAxis(records, "vulnerability"),
-        consequence: groupByAxis(records, "consequence")
+        consequence: groupByAxis(records, "consequence"),
+        year: groupByAxis(records, "year")
       },
 
       geography_unsupported: records.filter(function (r) {
@@ -332,7 +357,11 @@
     data_destruction:
       "Data or backups were deleted or overwritten by the system's own execution.",
     policy_misrepresentation:
-      "The system stated a policy, price, or commitment that the operator did not hold, and the statement was treated as the operator's own."
+      "The system stated a policy, price, or commitment that the operator did not hold, and the statement was treated as the operator's own.",
+    containment_failure:
+      "The boundary relied on to make model-generated or untrusted code safe to run did not hold, so execution reached the host it was meant to be isolated from.",
+    fabricated_output:
+      "The system produced confident content that does not exist or does not say what it was cited as saying, and that content was relied on as genuine."
   };
 
   function vulnerabilityDefinition(category) {

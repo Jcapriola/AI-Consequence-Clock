@@ -52,12 +52,12 @@ const expected = {
   geography_not_established: summary.geography_unsupported,
   disclosure_lag_average: summary.disclosure_lag_average,
   disclosure_lag_n: summary.disclosure_lag_n,
-  axes: {
-    country: axisMap("country"),
-    sector: axisMap("sector"),
-    vulnerability: axisMap("vulnerability"),
-    consequence: axisMap("consequence")
-  }
+  // Pin every axis the evidence layer publishes, not a hardcoded four, so a new
+  // breakdown is pinned the moment it exists rather than whenever someone remembers.
+  axes: Object.keys(summary.axes).reduce((acc, name) => {
+    acc[name] = axisMap(name);
+    return acc;
+  }, {})
 };
 
 const published = {

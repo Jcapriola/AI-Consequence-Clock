@@ -80,6 +80,17 @@
     var container = el(containerId);
     if (!container) return;
 
+    /*
+     * A time axis gets bars because the shape over time is the point. The bar is scaled
+     * to the largest headline count on this axis and is aria-hidden: it carries no
+     * information the adjacent number does not already state, so a screen reader that
+     * announced it would only repeat the cell.
+     */
+    var showBars = axis.order === "value";
+    var peak = groups.reduce(function (max, g) {
+      return Math.max(max, g.headline);
+    }, 0);
+
     var rows = groups
       .map(function (g) {
         var reasons = [];
@@ -103,9 +114,14 @@
           esc(g.supported ? humanize(g.label) : g.label) +
           "</button>" +
           (definition ? '<span class="axis-def">' + esc(definition) + "</span>" : "") +
-          (g.supported
+          (g.supported || axisName !== "country"
             ? ""
             : '<span class="axis-def">These records carry no region their attached sources establish. They are not resolved to a country.</span>') +
+          (showBars && peak > 0
+            ? '<span class="axis-bar" aria-hidden="true"><span style="width:' +
+              Math.round((g.headline / peak) * 100) +
+              '%"></span></span>'
+            : "") +
           "</th>" +
           '<td class="n n-headline">' +
           num(g.headline) +
@@ -442,6 +458,7 @@
     renderAxis("sector", "axis-sector");
     renderAxis("vulnerability", "axis-vulnerability");
     renderAxis("consequence", "axis-consequence");
+    renderAxis("year", "axis-year");
 
     var feed = STATE.records
       .slice()
@@ -507,6 +524,33 @@
       published = null;
     }
     var match = published && published.dataset_checksum_sha256 === digest;
+
+    /*
+     * Built from the dataset rather than hardcoded, so it cannot drift from the version it
+     * describes. The access date is today's, because a preview dataset changes and a
+     * citation without one cannot be checked against the version it was read from.
+     */
+    var citeEl = el("cite-block");
+    if (citeEl) {
+      citeEl.textContent =
+        "AI Blockchain Ventures LLC / AI Modularity. AI Consequence Clock dataset, " +
+        "methodology version " +
+        summary.methodology_version +
+        ", evidence layer " +
+        (STATE.dataset.evidence_layer_version || "n/a") +
+        ", dataset status " +
+        (STATE.dataset.dataset_status || "n/a") +
+        ". " +
+        summary.record_count +
+        " records, " +
+        summary.headline_count +
+        " in headline totals. Record id digest sha256 " +
+        digest.slice(0, 16) +
+        ". Accessed " +
+        new Date().toISOString().slice(0, 10) +
+        ".";
+    }
+
     el("repro").textContent =
       "methodology " +
       summary.methodology_version +

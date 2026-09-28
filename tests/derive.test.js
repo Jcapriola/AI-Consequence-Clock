@@ -99,10 +99,29 @@ check(
 );
 
 console.log("\nMetrics that must stay separate");
+// causal_role on a vulnerability record describes what the flaw would let an agent do,
+// not something an agent did. The count is restricted to documented occurrences so a
+// capability is never reported as an event.
 check(
-  "agent-caused uses causal_role only",
+  "agent-caused reads causal_role and counts documented occurrences only",
   summary.agent_caused,
-  headline.filter((r) => ["agent_initiated", "agent_executed"].includes(r.causal_role)).length
+  headline.filter(
+    (r) =>
+      ["agent_initiated", "agent_executed"].includes(r.causal_role) &&
+      r.adversary !== "research_demo"
+  ).length
+);
+check(
+  "agent-caused never counts a demonstrated capability",
+  headline.filter(
+    (r) =>
+      ["agent_initiated", "agent_executed"].includes(r.causal_role) &&
+      r.adversary === "research_demo"
+  ).length > 0
+    ? summary.agent_caused <
+      headline.filter((r) => ["agent_initiated", "agent_executed"].includes(r.causal_role)).length
+    : true,
+  true
 );
 check(
   "unauthorized actions counts explicit true only",
@@ -165,9 +184,18 @@ ok(
   records.every((r) => !r.financial_loss_confirmed || (r.sources || []).length > 0)
 );
 
-console.log("\nAxes: country, sector, vulnerability, consequence");
-["country", "sector", "vulnerability", "consequence"].forEach((axisName) => {
-  const field = E.AXES[axisName].key;
+/*
+ * Read from E.AXES rather than a hardcoded list, so adding an axis cannot add an untested
+ * view. The year axis was added with the list hardcoded and the assertion count did not
+ * move, which is how a new published breakdown slipped past the suite once already.
+ */
+const AXIS_NAMES = Object.keys(E.AXES);
+
+console.log("\nAxes: " + AXIS_NAMES.join(", "));
+AXIS_NAMES.forEach((axisName) => {
+  const axis = E.AXES[axisName];
+  // An axis either reads a field or derives its value. Both must round-trip to a record.
+  const valueOf = axis.value ? axis.value : (r) => r[axis.key];
   const groups = summary.axes[axisName];
 
   const headlineSum = groups.reduce((a, g) => a + g.headline, 0);
@@ -198,7 +226,7 @@ console.log("\nAxes: country, sector, vulnerability, consequence");
     if (g.supported) {
       ok(
         axisName + " / " + g.label + ": value exists on a record",
-        records.some((r) => String(r[field]) === String(g.value))
+        records.some((r) => String(valueOf(r)) === String(g.value))
       );
     }
   });
@@ -347,7 +375,7 @@ check("pinned geography not established", summary.geography_unsupported, expecte
 check("pinned disclosure lag average", summary.disclosure_lag_average, expected.disclosure_lag_average);
 check("pinned disclosure lag sample", summary.disclosure_lag_n, expected.disclosure_lag_n);
 
-["country", "sector", "vulnerability", "consequence"].forEach((axisName) => {
+AXIS_NAMES.forEach((axisName) => {
   const live = summary.axes[axisName].reduce((acc, g) => {
     acc[g.label] = { headline: g.headline, excluded: g.excluded };
     return acc;
@@ -392,7 +420,7 @@ if (headline.length > 0) {
   ok("removing a headline record lowers the record count", after.record_count === summary.record_count - 1);
   ok(
     "removing a headline record removes it from every axis",
-    ["country", "sector", "vulnerability", "consequence"].every(
+    AXIS_NAMES.every(
       (ax) => after.axes[ax].reduce((a, g) => a + g.total, 0) === summary.record_count - 1
     )
   );

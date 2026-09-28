@@ -6,32 +6,39 @@
   "dataset_status": "SEED_DEMO",
   "checksum_algorithm": "SHA-256",
   "checksum_input": "sorted incident id list, comma-joined",
-  "record_count": 10,
-  "eligible_record_count": 4,
+  "record_count": 16,
+  "eligible_record_count": 10,
   "record_ids": [
     "acc-2024-02-14-air-canada",
+    "acc-2024-10-29-langchain-graphcypherqachain-injection",
+    "acc-2025-06-06-al-haroun-fabricated-authorities",
     "acc-2025-06-camoleak",
     "acc-2025-07-18-replit-saastr",
-    "acc-2026-03-safe-command-cve"
+    "acc-2026-01-13-enclave-vm-sandbox-escape",
+    "acc-2026-01-14-cursor-agent-allowlist-bypass",
+    "acc-2026-03-safe-command-cve",
+    "acc-2026-04-09-praisonai-command-injection",
+    "acc-2026-07-15-mcp-python-sdk-task-authorization"
   ],
-  "dataset_checksum_sha256": "515f039fb8608a4ad98d1e600d8b382e9d47976eb9be10db9217b4d90054e6ca",
+  "dataset_checksum_sha256": "39c4692fea74fe7619ef60ffc849b79d01ed9842a56bb616c2f6f753ccc1c617",
   "hero_metric": "sourced_cases_lacking_documented_execution_time_authorization",
-  "hero_count": 2,
+  "hero_count": 3,
   "hero_record_ids": [
     "acc-2024-02-14-air-canada",
-    "acc-2025-07-18-replit-saastr"
+    "acc-2025-07-18-replit-saastr",
+    "acc-2025-06-06-al-haroun-fabricated-authorities"
   ],
   "occurrence_split": {
-    "documented_occurrences": 2,
-    "demonstrated_capabilities": 2,
+    "documented_occurrences": 3,
+    "demonstrated_capabilities": 7,
     "note": "Derived from the adversary field. These two are never added together under a label implying an event occurred."
   },
-  "agent_caused": 3,
+  "agent_caused": 1,
   "unauthorized_actions": 1,
   "confirmed_money": {
     "CAD": 812.02
   },
-  "geography_not_established": 4,
+  "geography_not_established": 9,
   "axes": {
     "country": [
       {
@@ -42,6 +49,12 @@
       },
       {
         "label": "Canada",
+        "supported": true,
+        "headline": 1,
+        "excluded": 0
+      },
+      {
+        "label": "United Kingdom",
         "supported": true,
         "headline": 1,
         "excluded": 0
@@ -61,7 +74,7 @@
       {
         "label": "Not established by sources",
         "supported": false,
-        "headline": 1,
+        "headline": 6,
         "excluded": 3
       }
     ],
@@ -69,11 +82,17 @@
       {
         "label": "software",
         "supported": true,
-        "headline": 3,
+        "headline": 8,
         "excluded": 3
       },
       {
         "label": "aviation",
+        "supported": true,
+        "headline": 1,
+        "excluded": 0
+      },
+      {
+        "label": "legal",
         "supported": true,
         "headline": 1,
         "excluded": 0
@@ -101,7 +120,13 @@
       {
         "label": "prompt_injection",
         "supported": true,
-        "headline": 2,
+        "headline": 5,
+        "excluded": 2
+      },
+      {
+        "label": "data_exposure",
+        "supported": true,
+        "headline": 1,
         "excluded": 2
       },
       {
@@ -111,16 +136,22 @@
         "excluded": 1
       },
       {
-        "label": "policy_misrepresentation",
+        "label": "containment_failure",
         "supported": true,
         "headline": 1,
         "excluded": 0
       },
       {
-        "label": "data_exposure",
+        "label": "fabricated_output",
         "supported": true,
-        "headline": 0,
-        "excluded": 2
+        "headline": 1,
+        "excluded": 0
+      },
+      {
+        "label": "policy_misrepresentation",
+        "supported": true,
+        "headline": 1,
+        "excluded": 0
       },
       {
         "label": "data_destruction",
@@ -133,20 +164,46 @@
       {
         "label": "data",
         "supported": true,
-        "headline": 2,
+        "headline": 4,
         "excluded": 3
       },
       {
         "label": "infrastructure",
         "supported": true,
-        "headline": 1,
+        "headline": 4,
         "excluded": 2
       },
       {
         "label": "legal",
         "supported": true,
-        "headline": 1,
+        "headline": 2,
         "excluded": 1
+      }
+    ],
+    "year": [
+      {
+        "label": "2023",
+        "supported": true,
+        "headline": 0,
+        "excluded": 2
+      },
+      {
+        "label": "2024",
+        "supported": true,
+        "headline": 2,
+        "excluded": 0
+      },
+      {
+        "label": "2025",
+        "supported": true,
+        "headline": 3,
+        "excluded": 0
+      },
+      {
+        "label": "2026",
+        "supported": true,
+        "headline": 5,
+        "excluded": 4
       }
     ]
   },
