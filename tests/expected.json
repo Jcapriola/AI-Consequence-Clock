@@ -1,0 +1,106 @@
+{
+  "_purpose": "Pinned baseline. tests/derive.test.js compares the live derivation against these committed numbers. Recomputing expectations from incidents.json alone cannot detect a record being deleted, because both sides move together. Any change here must be deliberate and must ship in the same commit as the data change, with the reason in the record change_log.",
+  "_regenerate": "node tests/update-expected.js",
+  "reviewed": "2026-09-28",
+  "record_count": 10,
+  "headline_count": 4,
+  "headline_ids": [
+    "acc-2024-02-14-air-canada",
+    "acc-2025-06-camoleak",
+    "acc-2025-07-18-replit-saastr",
+    "acc-2026-03-safe-command-cve"
+  ],
+  "documented_occurrences": 2,
+  "demonstrated_capabilities": 2,
+  "agent_caused": 3,
+  "unauthorized_actions": 1,
+  "authorization_gap": 2,
+  "confirmed_money": {
+    "CAD": 812.02
+  },
+  "geography_not_established": 4,
+  "disclosure_lag_average": 148,
+  "disclosure_lag_n": 4,
+  "axes": {
+    "country": {
+      "United States": {
+        "headline": 2,
+        "excluded": 1
+      },
+      "Canada": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "Australia": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "South Korea": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "Not established by sources": {
+        "headline": 1,
+        "excluded": 3
+      }
+    },
+    "sector": {
+      "software": {
+        "headline": 3,
+        "excluded": 3
+      },
+      "aviation": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "automotive": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "government": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "semiconductors": {
+        "headline": 0,
+        "excluded": 1
+      }
+    },
+    "vulnerability": {
+      "prompt_injection": {
+        "headline": 2,
+        "excluded": 2
+      },
+      "unauthorized_action": {
+        "headline": 1,
+        "excluded": 1
+      },
+      "policy_misrepresentation": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "data_exposure": {
+        "headline": 0,
+        "excluded": 2
+      },
+      "data_destruction": {
+        "headline": 0,
+        "excluded": 1
+      }
+    },
+    "consequence": {
+      "data": {
+        "headline": 2,
+        "excluded": 3
+      },
+      "infrastructure": {
+        "headline": 1,
+        "excluded": 2
+      },
+      "legal": {
+        "headline": 1,
+        "excluded": 1
+      }
+    }
+  }
+}

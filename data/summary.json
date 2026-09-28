@@ -1,19 +1,155 @@
 {
   "methodology_version": "0.2.2-preview",
+  "evidence_layer_version": "0.1.0",
   "generated_at": "2026-09-24T23:03:00-04:00",
+  "last_evidence_review": "2026-09-28",
   "dataset_status": "SEED_DEMO",
   "checksum_algorithm": "SHA-256",
   "checksum_input": "sorted incident id list, comma-joined",
   "record_count": 10,
-  "eligible_record_count": 1,
+  "eligible_record_count": 4,
   "record_ids": [
-    "acc-2024-02-14-air-canada"
+    "acc-2024-02-14-air-canada",
+    "acc-2025-06-camoleak",
+    "acc-2025-07-18-replit-saastr",
+    "acc-2026-03-safe-command-cve"
   ],
   "dataset_checksum_sha256": "515f039fb8608a4ad98d1e600d8b382e9d47976eb9be10db9217b4d90054e6ca",
   "hero_metric": "sourced_cases_lacking_documented_execution_time_authorization",
-  "hero_count": 1,
+  "hero_count": 2,
   "hero_record_ids": [
-    "acc-2024-02-14-air-canada"
+    "acc-2024-02-14-air-canada",
+    "acc-2025-07-18-replit-saastr"
   ],
-  "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP and SUBMISSION records stay in the feed."
+  "occurrence_split": {
+    "documented_occurrences": 2,
+    "demonstrated_capabilities": 2,
+    "note": "Derived from the adversary field. These two are never added together under a label implying an event occurred."
+  },
+  "agent_caused": 3,
+  "unauthorized_actions": 1,
+  "confirmed_money": {
+    "CAD": 812.02
+  },
+  "geography_not_established": 4,
+  "axes": {
+    "country": [
+      {
+        "label": "United States",
+        "supported": true,
+        "headline": 2,
+        "excluded": 1
+      },
+      {
+        "label": "Canada",
+        "supported": true,
+        "headline": 1,
+        "excluded": 0
+      },
+      {
+        "label": "Australia",
+        "supported": true,
+        "headline": 0,
+        "excluded": 1
+      },
+      {
+        "label": "South Korea",
+        "supported": true,
+        "headline": 0,
+        "excluded": 1
+      },
+      {
+        "label": "Not established by sources",
+        "supported": false,
+        "headline": 1,
+        "excluded": 3
+      }
+    ],
+    "sector": [
+      {
+        "label": "software",
+        "supported": true,
+        "headline": 3,
+        "excluded": 3
+      },
+      {
+        "label": "aviation",
+        "supported": true,
+        "headline": 1,
+        "excluded": 0
+      },
+      {
+        "label": "automotive",
+        "supported": true,
+        "headline": 0,
+        "excluded": 1
+      },
+      {
+        "label": "government",
+        "supported": true,
+        "headline": 0,
+        "excluded": 1
+      },
+      {
+        "label": "semiconductors",
+        "supported": true,
+        "headline": 0,
+        "excluded": 1
+      }
+    ],
+    "vulnerability": [
+      {
+        "label": "prompt_injection",
+        "supported": true,
+        "headline": 2,
+        "excluded": 2
+      },
+      {
+        "label": "unauthorized_action",
+        "supported": true,
+        "headline": 1,
+        "excluded": 1
+      },
+      {
+        "label": "policy_misrepresentation",
+        "supported": true,
+        "headline": 1,
+        "excluded": 0
+      },
+      {
+        "label": "data_exposure",
+        "supported": true,
+        "headline": 0,
+        "excluded": 2
+      },
+      {
+        "label": "data_destruction",
+        "supported": true,
+        "headline": 0,
+        "excluded": 1
+      }
+    ],
+    "consequence": [
+      {
+        "label": "data",
+        "supported": true,
+        "headline": 2,
+        "excluded": 3
+      },
+      {
+        "label": "infrastructure",
+        "supported": true,
+        "headline": 1,
+        "excluded": 2
+      },
+      {
+        "label": "legal",
+        "supported": true,
+        "headline": 1,
+        "excluded": 1
+      }
+    ]
+  },
+  "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP and SUBMISSION records stay in the feed.",
+  "verification": "node tests/derive.test.js"
 }

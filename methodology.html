@@ -22,7 +22,7 @@
       <a href="./index.html">← Clock</a>
       <a href="./data/incidents.json">Seed data</a>
     </nav>
-    <p class="sub">Methodology version 0.2.2-preview · 24 September 2026</p>
+    <p class="sub">Methodology version 0.2.2-preview · 24 September 2026 · evidence layer 0.1.0, reviewed 28 September 2026</p>
     <h1>How the clock counts</h1>
     <p>
       The AI Consequence Clock is a measurement layer, not a complete global sensor.
@@ -95,6 +95,71 @@
       After the v0.2 recode, most seed rows are REPORTED + ROUNDUP and drop out of
       headlines. That is intended. The clock should look small until primary sources
       are attached.
+    </p>
+
+    <h2>The four breakdowns</h2>
+    <p>
+      The clock reports every record along four axes, each read from a single field:
+      country from <code>country_region</code>, sector from <code>sector</code>,
+      vulnerability class from <code>category</code>, and consequence from
+      <code>consequence_class</code>. No axis is inferred from title text, summary text,
+      or the name of the organization.
+    </p>
+    <p>
+      Every row in every breakdown carries two counts and they are never added together.
+      The first is records that pass the headline rule. The second is records that stay
+      published and visible but do not count, shown beside the rule that excluded them:
+      review state, evidence grade, or both. A reader who sees four counted out of ten
+      can see which six were held back and why, which is the difference between a
+      published limitation and an unexplained gap.
+    </p>
+    <p>
+      Geography is grouped, never inferred. Records whose sources do not establish a
+      region are collected under <em>not established by sources</em> and are not resolved
+      to a country from the organization's headquarters, the publisher's country, or any
+      other proxy. That group always sorts last so it cannot be read as a place.
+    </p>
+    <p>
+      No breakdown ranks, scores, or orders vendors, products, or countries by harm. An
+      organization appears only as a field on a sourced record.
+    </p>
+
+    <h2>A documented occurrence is not a demonstrated capability</h2>
+    <p>
+      A tribunal decision and a research proof-of-concept can both be primary-sourced,
+      and both belong in the record. Adding them into one figure labelled
+      <em>incidents</em> would claim that something happened when the source says only
+      that it was shown to be possible.
+    </p>
+    <p>
+      The clock therefore splits the headline set using the existing
+      <code>adversary</code> field. Records marked <code>research_demo</code> are
+      reported as <strong>demonstrated capabilities</strong>. Everything else is reported
+      as a <strong>documented occurrence</strong>. The two counters sit side by side and
+      are never summed under a label implying an event occurred.
+    </p>
+    <p>
+      A worked case: CVE-2026-30306 is carried by the CVE Program record from the
+      assigning authority, which makes it PRIMARY and VERIFIED. The CISA assessment
+      attached to that same record puts exploitation at none. It is fully sourced and
+      nothing happened. It counts as a demonstrated capability and not as an event.
+    </p>
+
+    <h2>Corrections, revisions, and the pinned baseline</h2>
+    <p>
+      A record that changes carries an incremented <code>revision</code> and a
+      <code>change_log</code> entry naming what changed, what was corrected, and what was
+      deliberately left alone. Superseded sources stay attached so the previous basis for
+      a grade remains readable. Corrections do not silently rewrite history, and they run
+      in both directions: an unsourced monetary amount was removed from the confirmed
+      total in the 2026-09-28 review, which lowered a published figure.
+    </p>
+    <p>
+      Published totals are pinned in <code>tests/expected.json</code> and checked by
+      <code>node tests/derive.test.js</code>. Recomputing expected values from the data
+      file alone cannot detect a record disappearing, because both sides of the comparison
+      move together. The pinned baseline makes any movement in a published number a
+      deliberate, reviewable change rather than a silent one.
     </p>
     <p><a href="./index.html">Return to the clock</a></p>
   </div>

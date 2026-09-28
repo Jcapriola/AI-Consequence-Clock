@@ -1,0 +1,22 @@
+# CONTRIBUTING asks contributors not to commit secrets. This enforces it.
+*.env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*_token
+*.credentials
+
+# Local server and editor noise
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+
+# Transient analysis artifacts. Review output belongs in docs/, not in the repo root.
+*.tmp.js
+*.tmp.json
+tmp/

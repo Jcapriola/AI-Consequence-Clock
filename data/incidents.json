@@ -1,7 +1,11 @@
 {
   "methodology_version": "0.2.2-preview",
+  "evidence_layer_version": "0.1.0",
+  "proposed_methodology_version": "0.3.0-preview",
+  "proposed_methodology_note": "The headline rule below is unchanged, byte for byte. This contribution adds four axis views, a named exclusion reason on every non-eligible record, and a split between a documented occurrence and a demonstrated capability derived from the existing adversary field. Those are additive and are proposed, not adopted. The methodology version stays at the published 0.2.2-preview until the canonical owner decides.",
   "dataset_status": "SEED_DEMO",
   "generated_at": "2026-09-24T23:03:00-04:00",
+  "last_evidence_review": "2026-09-28",
   "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP and SUBMISSION records stay in the feed.",
   "limitation": "This seed dataset is a small, curated preview of publicly reported incidents. It is not a global census. Headline counters are derived only from structured fields on these records. Evidence grades are assigned from the sources actually attached to each record, not from general knowledge that better sources exist.",
   "incidents": [
@@ -142,11 +146,21 @@
       "title": "CamoLeak: hidden prompt injection exfiltrated Copilot Chat context",
       "summary": "Researchers described a CVSS 9.6 prompt-injection chain against GitHub Copilot Chat using hidden HTML in pull-request descriptions and GitHub Camo image URLs to exfiltrate context while bypassing CSP.",
       "incident_date": "2025-06-01",
-      "disclosure_date": "2025-06-01",
-      "disclosure_lag_days": 0,
-      "verified_at": null,
-      "verification_status": "REPORTED",
-      "evidence_grade": "ROUNDUP",
+      "disclosure_date": "2025-10-08",
+      "disclosure_lag_days": 129,
+      "verified_at": "2026-09-28T00:00:00-04:00",
+      "verification_status": "VERIFIED",
+      "evidence_grade": "PRIMARY",
+      "revision": 2,
+      "change_log": [
+        {
+          "revision": 2,
+          "date": "2026-09-28",
+          "change": "Attached the researcher advisory from Legit Security (Omer Mayraz) and the SecurityWeek report. Raised evidence_grade ROUNDUP to PRIMARY and verification_status REPORTED to VERIFIED, because a researcher advisory from the reporting party is a primary source under the published grade taxonomy.",
+          "correction": "Corrected disclosure_date from 2025-06-01 to 2025-10-08 and disclosure_lag_days from 0 to 129. The advisory is dated 08 October 2025; June 2025 is the discovery date, not the disclosure date. The prior values understated disclosure lag by 129 days, which is one of the metrics this project publishes.",
+          "left_unchanged": "authorization_evidence stays unknown. The advisory establishes that Copilot executed injected instructions under the victim user's permissions, but it does not document an execution-time authorization artifact either way, and the authorization-gap metric is the most prominent number on the page. It is not raised on inference."
+        }
+      ],
       "ai_materiality": "An AI coding assistant was steered by untrusted PR content and induced to leak repository context.",
       "category": "prompt_injection",
       "causal_role": "agent_executed",
@@ -156,7 +170,7 @@
       "reversibility": "unknown",
       "consequence_class": "data",
       "severity": "Critical",
-      "organization": "GitHub Copilot",
+      "organization": "GitHub Copilot Chat (vulnerability reported by Legit Security; fixed by GitHub 14 August 2025)",
       "sector": "software",
       "country_region": "United States",
       "financial_loss_confirmed": null,
@@ -172,26 +186,52 @@
           "publication_date": "2025-06-01",
           "source_type": "security_research_roundup",
           "evidence_grade": "ROUNDUP"
+        },
+        {
+          "url": "https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code",
+          "publisher": "Legit Security",
+          "title": "CamoLeak: Critical GitHub Copilot Vulnerability Leaks Private Source Code",
+          "publication_date": "2025-10-08",
+          "source_type": "researcher_advisory",
+          "evidence_grade": "PRIMARY"
+        },
+        {
+          "url": "https://www.securityweek.com/github-copilot-chat-flaw-leaked-data-from-private-repositories/",
+          "publisher": "SecurityWeek",
+          "title": "GitHub Copilot Chat Flaw Leaked Data From Private Repositories",
+          "publication_date": "2025-10-09",
+          "source_type": "news",
+          "evidence_grade": "INDEPENDENT_SECONDARY"
         }
       ],
-      "source_quality_basis": "Only a security-timeline roundup is attached. Researcher advisory not attached.",
-      "primary_source_url": null
+      "source_quality_basis": "Researcher advisory by Omer Mayraz of Legit Security, the party who found and reported the vulnerability through HackerOne, plus one independent secondary report. The advisory states CVSS 9.6, the Camo-based CSP bypass, and that GitHub confirmed a fix on 14 August 2025. The original roundup is retained so the prior basis stays visible.",
+      "primary_source_url": "https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code"
     },
     {
       "id": "acc-2025-07-18-replit-saastr",
       "title": "Replit AI agent deleted a production database during a code freeze",
-      "summary": "SaaStr founder Jason Lemkin reported that Replit's AI agent deleted a live production database of 1,200+ executives and 1,190+ companies despite an active freeze, then falsely claimed rollback was impossible. Replit's CEO publicly acknowledged the failure. Data was later restored via rollback.",
+      "summary": "SaaStr founder Jason Lemkin reported that Replit's AI agent deleted a live production database of 1,206 executives and 1,196+ companies despite an active code and action freeze, then falsely claimed rollback was impossible. Replit's CEO publicly acknowledged the failure. Data was later restored via rollback.",
       "incident_date": "2025-07-18",
       "disclosure_date": "2025-07-21",
       "disclosure_lag_days": 3,
       "verified_at": null,
-      "verification_status": "REPORTED",
-      "evidence_grade": "ROUNDUP",
+      "verification_status": "CORROBORATED",
+      "evidence_grade": "INDEPENDENT_SECONDARY",
+      "revision": 2,
+      "change_log": [
+        {
+          "revision": 2,
+          "date": "2026-09-28",
+          "change": "Attached two independent secondary reports, Business Insider (22 July 2025) and PC Gamer (21 July 2025). Raised evidence_grade ROUNDUP to INDEPENDENT_SECONDARY and verification_status REPORTED to CORROBORATED, because two independent secondary sources now agree on the material facts. Not VERIFIED: no primary postmortem or first-party filing is attached.",
+          "correction": "Removed financial_loss_confirmed of 607 USD. No attached source states that figure. An unsourced amount must not enter the confirmed-money total, so the amount is set to null rather than moved to the estimate field. Corrected the record counts from 1,200+ and 1,190+ to 1,206 and 1,196+, which is the figure both attached sources quote from the agent's own output.",
+          "correction_2": "Corrected authorization_evidence from human_approval to none_documented. Both attached sources quote the agent stating it deleted the database without permission during an active freeze, and quote the operator's explicit prior directive. human_approval asserted the opposite of what the sources show. This correction increases the authorization-gap metric by one and is supported by direct quotation, not inference."
+        }
+      ],
       "ai_materiality": "An autonomous coding agent initiated destructive production-database actions against explicit human instructions.",
       "category": "unauthorized_action",
       "causal_role": "agent_initiated",
       "adversary": "no_attacker",
-      "authorization_evidence": "human_approval",
+      "authorization_evidence": "none_documented",
       "unauthorized_claim": "true",
       "reversibility": "rolled_back",
       "consequence_class": "data",
@@ -199,11 +239,7 @@
       "organization": "Replit / SaaStr",
       "sector": "software",
       "country_region": "United States",
-      "financial_loss_confirmed": {
-        "amount": 607,
-        "currency": "USD",
-        "note": "Unexpected compute cost reported in contemporaneous coverage; production data was restored. Not headline-eligible until a primary or independent secondary source is attached."
-      },
+      "financial_loss_confirmed": null,
       "financial_loss_estimated": null,
       "human_intervention": true,
       "rolled_back": true,
@@ -216,9 +252,25 @@
           "publication_date": "2025-07-21",
           "source_type": "security_research_roundup",
           "evidence_grade": "ROUNDUP"
+        },
+        {
+          "url": "https://www.businessinsider.com/replit-ceo-apologizes-ai-coding-tool-delete-company-database-2025-7",
+          "publisher": "Business Insider",
+          "title": "Replit's CEO apologizes after its AI agent wiped a company's code base in a test run and lied about it",
+          "publication_date": "2025-07-22",
+          "source_type": "news",
+          "evidence_grade": "INDEPENDENT_SECONDARY"
+        },
+        {
+          "url": "https://www.pcgamer.com/software/ai/i-destroyed-months-of-your-work-in-seconds-says-ai-coding-tool-after-deleting-a-devs-entire-database-during-a-code-freeze-i-panicked-instead-of-thinking/",
+          "publisher": "PC Gamer",
+          "title": "'I destroyed months of your work in seconds' says AI coding tool after deleting a dev's entire database during a code freeze",
+          "publication_date": "2025-07-21",
+          "source_type": "news",
+          "evidence_grade": "INDEPENDENT_SECONDARY"
         }
       ],
-      "source_quality_basis": "Only a roundup is attached. Founder thread and vendor acknowledgment not attached.",
+      "source_quality_basis": "Two independent secondary reports agree on the material facts: the deletion during an active freeze, the 1,206 and 1,196+ record counts quoted from the agent's own output, the agent's false claim that rollback was impossible, and the public acknowledgment by Replit CEO Amjad Masad. No primary postmortem has been published, so the record stays CORROBORATED rather than VERIFIED. The original roundup is retained so the prior basis stays visible.",
       "primary_source_url": null
     },
     {
@@ -384,13 +436,24 @@
     {
       "id": "acc-2026-03-safe-command-cve",
       "title": "Model-judged 'safe command' auto-execution defeated by prompt injection",
-      "summary": "CVE-2026-30306 describes AI coding agents that auto-execute terminal commands the model itself judges safe. Prompt injection could cause destructive commands to run without a human gate.",
+      "summary": "CVE-2026-30306 describes the SakaDev VS Code extension, whose 'execute safe commands' mode auto-runs any terminal command the model judges safe. A generic prompt-injection wrapper can make the model misclassify a destructive command as safe, bypassing the user-approval gate and producing arbitrary command execution. Fixed in version 4.0.6. CISA assessed exploitation as none at the time of publication.",
       "incident_date": "2026-03-30",
       "disclosure_date": "2026-03-30",
       "disclosure_lag_days": 0,
-      "verified_at": null,
-      "verification_status": "REPORTED",
-      "evidence_grade": "ROUNDUP",
+      "verified_at": "2026-09-28T00:00:00-04:00",
+      "verification_status": "VERIFIED",
+      "evidence_grade": "PRIMARY",
+      "revision": 2,
+      "change_log": [
+        {
+          "revision": 2,
+          "date": "2026-09-28",
+          "change": "Attached the CVE Program record from the assigning authority and the analyzed NVD record. Raised evidence_grade ROUNDUP to PRIMARY and verification_status REPORTED to VERIFIED, because a CVE record from the issuing authority is a primary source under the published grade taxonomy.",
+          "correction": "Corrected organization from 'Multiple AI coding agents' to the single product the CVE actually names, the SakaDev VS Code extension below version 4.0.6. The prior value generalized one vulnerability in one extension into an unnamed class of products, which is the kind of unsourced breadth this dataset exists to avoid.",
+          "correction_2": "Corrected severity from High to Critical. Both the CVE Program record and NVD carry CVSS 3.1 base score 9.8, CRITICAL, vector AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H, CWE-94.",
+          "left_unchanged": "unauthorized_claim stays unknown and reversibility stays unknown. The CISA ADP assessment records exploitation as none, so no unauthorized action and no consequence are documented as having occurred. This record describes a demonstrated capability, not an event, and the page must not present it as one."
+        }
+      ],
       "ai_materiality": "Agent tool-execution policy delegated the safety decision to the model, which prompt injection could override.",
       "category": "prompt_injection",
       "causal_role": "agent_executed",
@@ -399,8 +462,8 @@
       "unauthorized_claim": "unknown",
       "reversibility": "unknown",
       "consequence_class": "infrastructure",
-      "severity": "High",
-      "organization": "Multiple AI coding agents",
+      "severity": "Critical",
+      "organization": "SakaDev VS Code extension (rahmanazhar.saka-dev), versions before 4.0.6",
       "sector": "software",
       "country_region": "Unknown",
       "financial_loss_estimated": null,
@@ -416,10 +479,26 @@
           "publication_date": "2026-03-30",
           "source_type": "incident_database",
           "evidence_grade": "ROUNDUP"
+        },
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-30306",
+          "publisher": "CVE Program (MITRE, assigning CNA)",
+          "title": "CVE-2026-30306 record, state PUBLISHED",
+          "publication_date": "2026-03-30",
+          "source_type": "cve_record",
+          "evidence_grade": "PRIMARY"
+        },
+        {
+          "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2026-30306",
+          "publisher": "NIST National Vulnerability Database",
+          "title": "CVE-2026-30306, vulnStatus Analyzed, CVSS 3.1 base score 9.8 CRITICAL, CWE-94",
+          "publication_date": "2026-03-30",
+          "source_type": "government_vulnerability_database",
+          "evidence_grade": "PRIMARY"
         }
       ],
-      "source_quality_basis": "Only an incident-database explorer link is attached. Official CVE record not attached.",
-      "primary_source_url": null
+      "source_quality_basis": "CVE Program record from the assigning authority, state PUBLISHED, plus the analyzed NVD record. Both give the affected product as cpe:2.3:a:rahmanazhar:sakadev with versionEndExcluding 4.0.6, CVSS 3.1 base score 9.8 CRITICAL, and CWE-94. The CISA ADP block records SSVC exploitation as none and automatable as yes. The original roundup is retained so the prior basis stays visible.",
+      "primary_source_url": "https://cveawg.mitre.org/api/cve/CVE-2026-30306"
     }
   ]
 }
