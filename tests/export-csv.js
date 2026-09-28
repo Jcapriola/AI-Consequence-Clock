@@ -74,13 +74,17 @@ var COLUMNS = [
   ["authorization_evidence", function (r) { return r.authorization_evidence; }],
   ["execution_auth_documented", function (r) { return r.execution_auth_documented; }],
   ["authorization_gap", function (r) { return E.isAuthGap(r) ? "yes" : "no"; }],
-  ["money_confirmed_amount", function (r) { return r.money && r.money.confirmed ? r.money.confirmed.amount : ""; }],
-  ["money_confirmed_currency", function (r) { return r.money && r.money.confirmed ? r.money.confirmed.currency : ""; }],
-  ["money_estimated_amount", function (r) { return r.money && r.money.estimated ? r.money.estimated.amount : ""; }],
-  ["money_estimated_currency", function (r) { return r.money && r.money.estimated ? r.money.estimated.currency : ""; }],
+  ["money_confirmed_amount", function (r) { return r.financial_loss_confirmed ? r.financial_loss_confirmed.amount : ""; }],
+  ["money_confirmed_currency", function (r) { return r.financial_loss_confirmed ? r.financial_loss_confirmed.currency : ""; }],
+  ["money_confirmed_note", function (r) { return r.financial_loss_confirmed ? r.financial_loss_confirmed.note : ""; }],
+  ["money_estimated_amount", function (r) { return r.financial_loss_estimated ? r.financial_loss_estimated.amount : ""; }],
+  ["money_estimated_currency", function (r) { return r.financial_loss_estimated ? r.financial_loss_estimated.currency : ""; }],
+  ["money_estimated_note", function (r) { return r.financial_loss_estimated ? r.financial_loss_estimated.note : ""; }],
   ["primary_source_url", function (r) { return r.primary_source_url || ""; }],
   ["source_count", function (r) { return (r.sources || []).length; }],
   ["source_urls", function (r) { return (r.sources || []).map(function (s) { return s.url; }).join(" | "); }],
+  ["archived_source_count", function (r) { return (r.sources || []).filter(function (s) { return !!s.archived_url; }).length; }],
+  ["archived_urls", function (r) { return (r.sources || []).filter(function (s) { return s.archived_url; }).map(function (s) { return s.archived_url; }).join(" | "); }],
   ["ai_materiality", function (r) { return r.ai_materiality; }],
   ["source_quality_basis", function (r) { return r.source_quality_basis; }],
   ["revision", function (r) { return r.revision; }]
@@ -99,6 +103,29 @@ records.forEach(function (record) {
 // CRLF is what RFC 4180 specifies and what Excel expects. A UTF-8 BOM keeps non-ASCII
 // characters in the judicial citations from being mangled when Excel opens the file.
 fs.writeFileSync(outPath, "\ufeff" + lines.join("\r\n") + "\r\n", "utf8");
+
+/*
+ * The CSV once wrote empty money columns because it read r.money.confirmed, a field
+ * that does not exist. Confirmed CAD 812.02 was on the record and invisible in the
+ * spreadsheet. If a confirmed amount is on a record, it must appear in that record's
+ * row or this write is a lie.
+ */
+records.forEach(function (record, i) {
+  var row = lines[i + 1];
+  var confirmed = record.financial_loss_confirmed;
+  if (confirmed && typeof confirmed.amount === "number") {
+    if (row.indexOf(csvCell(confirmed.amount)) === -1 || row.indexOf(csvCell(confirmed.currency)) === -1) {
+      throw new Error(
+        record.id +
+          ": confirmed " +
+          confirmed.amount +
+          " " +
+          confirmed.currency +
+          " is on the record but missing from the CSV row"
+      );
+    }
+  }
+});
 
 console.log("Wrote data/incidents.csv: " + records.length + " rows, " + COLUMNS.length + " columns.");
 console.log("Generated file. Edit data/incidents.json and re-run; never edit the CSV.");

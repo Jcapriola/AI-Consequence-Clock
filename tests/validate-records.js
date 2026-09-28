@@ -18,14 +18,13 @@ var path = require("path");
 var S = require(path.join(__dirname, "schema.js"));
 var E = require(path.join(__dirname, "..", "js", "evidence.js"));
 
-var db = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "incidents.json"), "utf8"));
-var records = db.incidents || [];
-
-var problems = [];
-var checked = 0;
-var archivePresent = 0;
-var archiveAbsent = 0;
-var archiveUnchecked = 0;
+function validateDataset(db) {
+  var records = (db && db.incidents) || [];
+  var problems = [];
+  var checked = 0;
+  var archivePresent = 0;
+  var archiveAbsent = 0;
+  var archiveUnchecked = 0;
 
 function fail(id, message) {
   problems.push((id || "(no id)") + " :: " + message);
@@ -58,7 +57,6 @@ records.forEach(function (record, index) {
 
   /* Required prose */
   S.REQUIRED_TEXT.forEach(function (field) {
-    if (field === "country_region") return; // handled separately, null is meaningful
     if (!nonEmptyString(record[field])) fail(id, field + " is required and must be non-empty");
     checked++;
   });
@@ -248,34 +246,52 @@ records.forEach(function (record, index) {
   }
 });
 
-/* Dataset-level */
-if (!nonEmptyString(db.last_evidence_review) || !S.isValidIsoDate(db.last_evidence_review)) {
-  fail("(dataset)", "last_evidence_review must be a real YYYY-MM-DD date");
-}
-checked++;
+  /* Dataset-level */
+  if (!nonEmptyString(db.last_evidence_review) || !S.isValidIsoDate(db.last_evidence_review)) {
+    fail("(dataset)", "last_evidence_review must be a real YYYY-MM-DD date");
+  }
+  checked++;
 
-console.log("Validated " + records.length + " records, " + checked + " field checks.");
-
-/*
- * Reported, not enforced. Archive coverage depends on a third party being reachable, so
- * failing the build on it would make the suite non-deterministic. Surfacing it keeps the
- * link-rot exposure visible instead of invisible.
- */
-console.log(
-  "Source archive coverage: " +
-    archivePresent +
-    " snapshot, " +
-    archiveAbsent +
-    " confirmed none, " +
-    archiveUnchecked +
-    " not yet checked. Run: node tests/find-archives.js"
-);
-if (problems.length) {
-  console.log("\n" + problems.length + " problem(s):\n");
-  problems.forEach(function (p) {
-    console.log("  " + p);
-  });
-  console.log("\nFAILED record validation.");
-  process.exit(1);
+  return {
+    problems: problems,
+    checked: checked,
+    archivePresent: archivePresent,
+    archiveAbsent: archiveAbsent,
+    archiveUnchecked: archiveUnchecked,
+    recordCount: records.length
+  };
 }
-console.log("PASSED record validation.");
+
+function report(result) {
+  console.log("Validated " + result.recordCount + " records, " + result.checked + " field checks.");
+  /*
+   * Reported, not enforced. Archive coverage depends on a third party being reachable, so
+   * failing the build on it would make the suite non-deterministic. Surfacing it keeps the
+   * link-rot exposure visible instead of invisible.
+   */
+  console.log(
+    "Source archive coverage: " +
+      result.archivePresent +
+      " snapshot, " +
+      result.archiveAbsent +
+      " confirmed none, " +
+      result.archiveUnchecked +
+      " not yet checked. Run: node tests/find-archives.js"
+  );
+  if (result.problems.length) {
+    console.log("\n" + result.problems.length + " problem(s):\n");
+    result.problems.forEach(function (p) {
+      console.log("  " + p);
+    });
+    console.log("\nFAILED record validation.");
+    process.exit(1);
+  }
+  console.log("PASSED record validation.");
+}
+
+if (require.main === module) {
+  var db = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "incidents.json"), "utf8"));
+  report(validateDataset(db));
+}
+
+module.exports = { validateDataset: validateDataset };

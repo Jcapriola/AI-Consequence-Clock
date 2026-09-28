@@ -48,7 +48,11 @@ var SOURCE_ENUMS = {
   evidence_grade: ["ROUNDUP", "INDEPENDENT_SECONDARY", "PRIMARY"]
 };
 
-/* Free-text fields that must be present and non-empty. */
+/* Free-text fields that must be present and non-empty.
+ * country_region is not in this list: null is a meaningful value, meaning the
+ * attached sources did not establish a region. Treating it as required prose would
+ * force a placeholder string, which is the geography defect this schema forbids.
+ */
 var REQUIRED_TEXT = [
   "id",
   "title",
@@ -57,7 +61,6 @@ var REQUIRED_TEXT = [
   "ai_materiality",
   "organization",
   "sector",
-  "country_region",
   "source_quality_basis"
 ];
 

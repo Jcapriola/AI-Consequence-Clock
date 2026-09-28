@@ -13,8 +13,9 @@ Canonical project control stays with AI Blockchain Ventures LLC / AI Modularity.
 Before opening a pull request, run both:
 
 ```bash
-node tests/validate-records.js   # field vocabulary and shape
-node tests/derive.test.js        # every published total
+node tests/validate-records.js
+node tests/validate.test.js
+node tests/derive.test.js
 ```
 
 If you changed a record, the suite fails until you run `node tests/update-expected.js` and include the resulting baseline diff — that diff is how a reviewer sees which published totals your change moved.

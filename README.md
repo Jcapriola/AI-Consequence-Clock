@@ -29,15 +29,13 @@ If you open `index.html` as a file:// URL, `fetch` of the JSON may be blocked by
 
 ```bash
 node tests/derive.test.js
-```
-
-501 assertions recompute every published total from `data/incidents.json` and compare them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework.
-
-```bash
 node tests/validate-records.js
+node tests/validate.test.js
 ```
 
-Checks every field on every record against the allowed vocabulary and shape before any arithmetic runs. This catches the failure that arithmetic cannot: a record with `verified` in lowercase computes correctly and silently drops out of every headline total, so the clock gets quieter with no error anywhere.
+`derive.test.js` recomputes every published total from `data/incidents.json` and compares them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework. `validate.test.js` mutates a copy of the file: a lowercase `verified` status, a `javascript:` archive URL, a PRIMARY record with no named primary document, and the geography placeholder `Unknown` must each fail validation. The live file must not.
+
+`validate-records.js` checks every field on every record against the allowed vocabulary and shape before any arithmetic runs.
 
 If you change a record, the suite will fail until you regenerate the baseline and the published summary:
 
@@ -81,7 +79,7 @@ It carries a caveat the four axes do not need: a rising count measures disclosur
 
 Every CSV row carries `verification_status`, `evidence_grade` and `in_headline_totals`, so the eligibility rule travels with the data. Filter to `in_headline_totals = yes` to reproduce the figures on the page. The per-record flag columns describe every row including the ones the site does not count, so totalling `agent_caused` across the whole file gives a larger number than the page reports, by design.
 
-Money columns stay separate and currency-tagged. `confirmed` and `estimated` are never merged into one column, because a spreadsheet will happily sum a mixed column and produce a figure no source supports.
+Money columns stay separate and currency-tagged. They are read from `financial_loss_confirmed` and `financial_loss_estimated`, the same fields the page uses. `confirmed` and `estimated` are never merged into one column, because a spreadsheet will happily sum a mixed column and produce a figure no source supports. If a record carries a confirmed amount, the exporter refuses to write a CSV that omits it.
 
 ## What’s in the box
 
@@ -99,11 +97,13 @@ Money columns stay separate and currency-tagged. `confirmed` and `estimated` are
 | `tests/expected.json` | Pinned baseline for published totals |
 | `tests/schema.js` | Allowed field vocabulary and shape rules |
 | `tests/validate-records.js` | Field-level validation, run before the arithmetic |
+| `tests/validate.test.js` | Mutations that arithmetic would swallow must fail validation |
 | `tests/find-archives.js` | Wayback snapshot lookup for every source URL |
 | `tests/export-csv.js` | Regenerates `data/incidents.csv` |
-| `docs/CURRENT_STATE.md` | Review of the preview as of 28 September 2026 |
+| `docs/CURRENT_STATE.md` | Before-snapshot of the seed preview at `1d51c76`. Not current figures |
 | `IMPLEMENTATION_PROPOSAL.md` | Stack, timeline, ownership, assumptions |
 | `CONTRIBUTING.md` | Fork + PR / submission rules |
+| `CONTRIBUTORS.md` | Credit. Not ownership |
 | `assets/concept-render.png` | Visual direction only |
 
 `js/evidence.js` is the only file that computes a number. `js/clock.js` renders what it is given and nothing else, so a passing test run means the page cannot be displaying a figure the data does not support.

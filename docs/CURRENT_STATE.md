@@ -1,5 +1,24 @@
 # Current state of the preview, read from the files
 
+**This file is a before-snapshot.** It describes the seed preview at commit `1d51c76`,
+before this branch. It is kept so a reviewer can see what was wrong, not as a description
+of the code that is here now.
+
+Current figures, current eligibility, and current axis totals are produced by:
+
+```bash
+node tests/validate-records.js
+node tests/derive.test.js
+```
+
+The decorative four-dot map, the frozen `days-since` literal, and the inline `onclick`
+handlers named below were removed in this branch. `docs/CURRENT_STATE.md` is not
+regenerated on each record change, on purpose: a rolling "current state" document would
+quietly contradict the pinned baseline in `tests/expected.json`, and the baseline is the
+one that fails the build.
+
+---
+
 Written before any product code in this branch was changed. Every number below was
 computed from `data/incidents.json` at commit `1d51c76`, not recalled. The command used
 is in `tests/derive.test.js`, which now enforces the same arithmetic.

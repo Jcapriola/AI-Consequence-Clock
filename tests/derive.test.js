@@ -232,6 +232,12 @@ AXIS_NAMES.forEach((axisName) => {
   });
 });
 
+const yearLabels = summary.axes.year.filter((g) => g.supported).map((g) => g.value);
+ok(
+  "year axis stays in chronological order",
+  yearLabels.every((label, i) => i === 0 || yearLabels[i - 1] <= label)
+);
+
 console.log("\nGeography is never inferred");
 const unsupportedGroup = summary.axes.country.find((g) => !g.supported);
 const expectedUnsupported = records.filter(
