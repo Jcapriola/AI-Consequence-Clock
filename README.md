@@ -55,7 +55,7 @@ node tests/export-csv.js       # regenerate data/incidents.csv from the JSON
 
 `find-archives.js` distinguishes three outcomes and never conflates them: a snapshot was found, no snapshot exists, or the lookup failed. A failed lookup leaves the source untouched, because a dataset that separates verified from unverified must not let its own tooling record an absence it did not observe.
 
-It resumes by default, skipping sources already resolved, because each lookup takes roughly 40 seconds against a free public API. Pass `--recheck` to force a full pass. Current coverage across 29 source URLs: 14 with a snapshot, 12 confirmed to have none, 3 unresolved.
+It resumes by default, skipping sources already resolved, because each lookup takes roughly 40 seconds against a free public API. Pass `--recheck` to force a full pass. Current coverage across 29 source URLs: 16 with a snapshot, 13 confirmed to have none, none unresolved.
 
 The confirmed absences are worth reading rather than skipping. Nearly all are machine-readable API endpoints under `cveawg.mitre.org/api/` and `services.nvd.nist.gov/rest/`, which web archives do not crawl. Reading an authoritative API gives the most exact data and the least durable citation. The methodology page records that trade-off instead of hiding it.
 

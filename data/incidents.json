@@ -141,7 +141,9 @@
           "title": "Samsung bans ChatGPT, Google Bard after chip secrets leaked",
           "publication_date": "2023-05-02",
           "source_type": "news",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": null,
+          "archived_at": null
         }
       ],
       "source_quality_basis": "Single independent secondary (Bloomberg). No company primary disclosure attached.",
@@ -273,7 +275,9 @@
           "title": "Replit's CEO apologizes after its AI agent wiped a company's code base in a test run and lied about it",
           "publication_date": "2025-07-22",
           "source_type": "news",
-          "evidence_grade": "INDEPENDENT_SECONDARY"
+          "evidence_grade": "INDEPENDENT_SECONDARY",
+          "archived_url": "https://web.archive.org/web/20250722071331/https://www.businessinsider.com/replit-ceo-apologizes-ai-coding-tool-delete-company-database-2025-7",
+          "archived_at": "2025-07-22"
         },
         {
           "url": "https://www.pcgamer.com/software/ai/i-destroyed-months-of-your-work-in-seconds-says-ai-coding-tool-after-deleting-a-devs-entire-database-during-a-code-freeze-i-panicked-instead-of-thinking/",
@@ -299,6 +303,16 @@
       "verified_at": null,
       "verification_status": "REPORTED",
       "evidence_grade": "ROUNDUP",
+      "revision": 2,
+      "change_log": [
+        {
+          "revision": 2,
+          "date": "2026-09-28",
+          "change": "No new source was attached.",
+          "correction": "Replaced country_region \"Unknown\" with null. The attached source does not establish a region, and a placeholder string is not a country. The evidence layer already excluded that placeholder, so no published total moved.",
+          "left_unchanged": "verification_status stays REPORTED and evidence_grade stays ROUNDUP. The Wiz write-up is still not attached."
+        }
+      ],
       "ai_materiality": "An AI-agent social platform's live credentials and user identifiers were exposed through infrastructure used to operate agent connectivity.",
       "category": "data_exposure",
       "causal_role": "unknown",
@@ -341,6 +355,16 @@
       "verified_at": null,
       "verification_status": "REPORTED",
       "evidence_grade": "INDEPENDENT_SECONDARY",
+      "revision": 2,
+      "change_log": [
+        {
+          "revision": 2,
+          "date": "2026-09-28",
+          "change": "No new source was attached.",
+          "correction": "Replaced country_region \"Unknown\" with null. The attached source does not establish a region, and a placeholder string is not a country. The evidence layer already excluded that placeholder, so no published total moved.",
+          "left_unchanged": "verification_status stays REPORTED. One independent secondary source is not CORROBORATED."
+        }
+      ],
       "ai_materiality": "An AI coding agent executed destructive operations against production data stores.",
       "category": "data_destruction",
       "causal_role": "agent_initiated",
@@ -425,6 +449,16 @@
       "verified_at": null,
       "verification_status": "REPORTED",
       "evidence_grade": "INDEPENDENT_SECONDARY",
+      "revision": 2,
+      "change_log": [
+        {
+          "revision": 2,
+          "date": "2026-09-28",
+          "change": "No new source was attached.",
+          "correction": "Replaced country_region \"Unknown\" with null. The attached source does not establish a region, and a placeholder string is not a country. The evidence layer already excluded that placeholder, so no published total moved.",
+          "left_unchanged": "verification_status stays REPORTED. One independent secondary source is not CORROBORATED. The Salt Labs advisory is still not attached."
+        }
+      ],
       "ai_materiality": "An agentic application executed untrusted instructions with tool access before presenting a security warning.",
       "category": "prompt_injection",
       "causal_role": "agent_executed",
@@ -460,7 +494,7 @@
     {
       "id": "acc-2026-03-safe-command-cve",
       "title": "Model-judged 'safe command' auto-execution defeated by prompt injection",
-      "summary": "CVE-2026-30306 describes the SakaDev VS Code extension, whose 'execute safe commands' mode auto-runs any terminal command the model judges safe. A generic prompt-injection wrapper can make the model misclassify a destructive command as safe, bypassing the user-approval gate and producing arbitrary command execution. Fixed in version 4.0.6. CISA assessed exploitation as none at the time of publication.",
+      "summary": "CVE-2026-30306 describes the SakaDev VS Code extension, whose 'execute safe commands' mode auto-runs any terminal command the model judges safe. A generic prompt-injection wrapper can make the model misclassify a destructive command as safe, bypassing the user-approval gate. Fixed in 4.0.6, and CISA assessed exploitation as none at the time of publication.",
       "incident_date": "2026-03-30",
       "disclosure_date": "2026-03-30",
       "disclosure_lag_days": 0,
@@ -475,7 +509,7 @@
           "change": "Attached the CVE Program record from the assigning authority and the analyzed NVD record. Raised evidence_grade ROUNDUP to PRIMARY and verification_status REPORTED to VERIFIED, because a CVE record from the issuing authority is a primary source under the published grade taxonomy.",
           "correction": "Corrected organization from 'Multiple AI coding agents' to the single product the CVE actually names, the SakaDev VS Code extension below version 4.0.6. The prior value generalized one vulnerability in one extension into an unnamed class of products, which is the kind of unsourced breadth this dataset exists to avoid.",
           "correction_2": "Corrected severity from High to Critical. Both the CVE Program record and NVD carry CVSS 3.1 base score 9.8, CRITICAL, vector AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H, CWE-94.",
-          "left_unchanged": "unauthorized_claim stays unknown and reversibility stays unknown. The CISA ADP assessment records exploitation as none, so no unauthorized action and no consequence are documented as having occurred. This record describes a demonstrated capability, not an event, and the page must not present it as one."
+          "left_unchanged": "unauthorized_claim stays unknown and reversibility stays unknown. country_region was the placeholder Unknown and is now null, because the CVE names a product and not a region; no published geography total moved. The CISA ADP assessment records exploitation as none, so no unauthorized action and no consequence are documented as having occurred. This record describes a demonstrated capability, not an event, and the page must not present it as one."
         }
       ],
       "ai_materiality": "Agent tool-execution policy delegated the safety decision to the model, which prompt injection could override.",
@@ -533,7 +567,7 @@
     {
       "id": "acc-2026-01-14-cursor-agent-allowlist-bypass",
       "title": "Agent auto-run allowlist bypassed by poisoning environment variables",
-      "summary": "CVE-2026-22708 describes Cursor before version 2.3. With the agent in Auto-Run Mode and Allowlist mode enabled, certain shell built-ins could still execute without appearing in the allowlist and without user approval. Direct or indirect prompt injection could use this to set, modify, or remove environment variables that influence trusted commands. Fixed in 2.3.",
+      "summary": "CVE-2026-22708 describes Cursor before version 2.3. In Auto-Run allowlist mode, certain shell built-ins could still run without user approval, and prompt injection could use them to change environment variables that influence trusted commands. Fixed in 2.3.",
       "incident_date": "2026-01-14",
       "disclosure_date": "2026-01-14",
       "disclosure_lag_days": 0,
@@ -586,7 +620,7 @@
     {
       "id": "acc-2026-01-13-enclave-vm-sandbox-escape",
       "title": "Sandbox built to isolate AI agent code allowed full escape to the host runtime",
-      "summary": "CVE-2026-22686 describes enclave-vm before version 2.7.0, a JavaScript sandbox intended for safe AI agent code execution. When a tool invocation failed, the sandbox exposed a host-side Error object whose host realm prototype chain could be traversed to reach the host Function constructor, allowing arbitrary code execution in the host Node.js runtime with access to process.env, the filesystem, and the network. The CVE record states this breaks the sandbox's core isolation guarantee. Fixed in 2.7.0.",
+      "summary": "CVE-2026-22686 describes enclave-vm before 2.7.0, a JavaScript sandbox intended for safe AI agent code execution. A failed tool invocation exposed a host Error object whose prototype chain could be walked to the host Function constructor, so code ran in the host runtime. The CVE record states this breaks the sandbox's isolation guarantee, and the fix is 2.7.0.",
       "incident_date": "2026-01-13",
       "disclosure_date": "2026-01-13",
       "disclosure_lag_days": 0,
@@ -692,7 +726,7 @@
     {
       "id": "acc-2026-07-15-mcp-python-sdk-task-authorization",
       "title": "Missing session ownership checks let any connected client read other clients' agent tasks",
-      "summary": "CVE-2026-52870 describes the MCP Python SDK from version 1.23.0 until 1.27.2. Default handlers installed by server.experimental.enable_tasks() for tasks/list, tasks/get, tasks/result and tasks/cancel operated only on task identifiers without recording which session created each task. Any connected client could enumerate, read results from, consume messages for, or cancel another client's tasks. Fixed in 1.27.2.",
+      "summary": "CVE-2026-52870 describes the MCP Python SDK from 1.23.0 until 1.27.2. Task handlers installed by server.experimental.enable_tasks() checked task identifiers and not which session created the task, so any connected client could read, consume, or cancel another client's tasks. Fixed in 1.27.2.",
       "incident_date": "2026-07-15",
       "disclosure_date": "2026-07-15",
       "disclosure_lag_days": 0,
@@ -777,7 +811,9 @@
           "title": "CVE-2024-8309 record, state PUBLISHED",
           "publication_date": "2024-10-29",
           "source_type": "cve_record",
-          "evidence_grade": "PRIMARY"
+          "evidence_grade": "PRIMARY",
+          "archived_url": "https://web.archive.org/web/20250416115728/https://cveawg.mitre.org/api/cve/CVE-2024-8309",
+          "archived_at": "2025-04-16"
         },
         {
           "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2024-8309",
