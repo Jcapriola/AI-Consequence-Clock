@@ -23,19 +23,90 @@ python3 -m http.server 4173
 
 Open http://localhost:4173
 
-If you open `index.html` as a file:// URL, `fetch` of the JSON may be blocked by the browser. Use the local server.
+If you open `index.html` as a file:// URL, `fetch` of the JSON may be blocked by the browser. Use the local server. The page now says so on screen instead of failing silently.
+
+## Verify the numbers
+
+```bash
+node tests/derive.test.js
+node tests/validate-records.js
+node tests/validate.test.js
+```
+
+`derive.test.js` recomputes every published total from `data/incidents.json` and compares them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework. `validate.test.js` mutates a copy of the file: a lowercase `verified` status, a `javascript:` archive URL, a PRIMARY record with no named primary document, and the geography placeholder `Unknown` must each fail validation. The live file must not.
+
+`validate-records.js` checks every field on every record against the allowed vocabulary and shape before any arithmetic runs.
+
+If you change a record, the suite will fail until you regenerate the baseline and the published summary:
+
+```bash
+node tests/update-expected.js   # then review the diff
+node tests/derive.test.js
+```
+
+The diff is the review surface: it shows exactly which published totals your record change moved.
+
+Two more tools, neither required to pass:
+
+```bash
+node tests/find-archives.js    # look up a Wayback snapshot for every source URL
+node tests/export-csv.js       # regenerate data/incidents.csv from the JSON
+```
+
+`find-archives.js` distinguishes three outcomes and never conflates them: a snapshot was found, no snapshot exists, or the lookup failed. A failed lookup leaves the source untouched, because a dataset that separates verified from unverified must not let its own tooling record an absence it did not observe.
+
+It resumes by default, skipping sources already resolved, because each lookup takes roughly 40 seconds against a free public API. Pass `--recheck` to force a full pass. Current coverage across 29 source URLs: 16 with a snapshot, 13 confirmed to have none, none unresolved.
+
+The confirmed absences are worth reading rather than skipping. Nearly all are machine-readable API endpoints under `cveawg.mitre.org/api/` and `services.nvd.nist.gov/rest/`, which web archives do not crawl. Reading an authoritative API gives the most exact data and the least durable citation. The methodology page records that trade-off instead of hiding it.
+
+## The four breakdowns
+
+Every record is reported by country, sector, vulnerability class, and consequence, each read from a single field. Each row shows two counts that are never added together: records that pass the headline rule, and records that stay visible but do not count, beside the rule that excluded them.
+
+Two counters replace a single "incidents" figure. **Documented occurrences** are records whose sources describe an event. **Demonstrated capabilities** are records whose sources describe something shown to be possible. A fully-sourced CVE with no known exploitation belongs in the second group, and adding the two together would claim something the sources do not say.
+
+Geography is grouped, never inferred. Records without a region established by their sources are collected under "not established by sources" rather than assigned to a country.
+
+## Over time
+
+A fifth view groups records by year, kept deliberately outside the four-axis grid. It is reported by **year of disclosure, not year of occurrence**, because every record has a disclosure date while incident dates are often approximate or unknown, and grouping by them would invent precision the sources do not support.
+
+It carries a caveat the four axes do not need: a rising count measures disclosure and this dataset's own growing coverage, not how often these events happen. Presenting it as a peer of the four named axes would quietly imply it measures the world.
+
+## Use the data elsewhere
+
+`data/incidents.json` is the record of truth. `data/incidents.csv` is generated from it by `node tests/export-csv.js` for spreadsheet and statistical work, and should never be edited by hand.
+
+Every CSV row carries `verification_status`, `evidence_grade` and `in_headline_totals`, so the eligibility rule travels with the data. Filter to `in_headline_totals = yes` to reproduce the figures on the page. The per-record flag columns describe every row including the ones the site does not count, so totalling `agent_caused` across the whole file gives a larger number than the page reports, by design.
+
+Money columns stay separate and currency-tagged. They are read from `financial_loss_confirmed` and `financial_loss_estimated`, the same fields the page uses. `confirmed` and `estimated` are never merged into one column, because a spreadsheet will happily sum a mixed column and produce a figure no source supports. If a record carries a confirmed amount, the exporter refuses to write a CSV that omits it.
 
 ## What’s in the box
 
 | Path | Role |
 | --- | --- |
-| `index.html` | Public clock |
-| `methodology.html` | v0.1-preview rules |
-| `data/incidents.json` | Seed records + source links |
-| `css/clock.css` / `js/clock.js` | UI and counter derivation |
+| `index.html` | Public clock and the four breakdowns |
+| `methodology.html` | Published rules |
+| `data/incidents.json` | Seed records, source links, revision history. The record of truth |
+| `data/incidents.csv` | Generated from the JSON by `tests/export-csv.js`. Never edited by hand |
+| `data/summary.json` | Derived artifact, regenerated by `tests/update-expected.js` |
+| `css/clock.css` | UI |
+| `js/evidence.js` | All counter derivation, loaded by the page and the tests |
+| `js/clock.js` | Rendering only |
+| `tests/derive.test.js` | Counter and integrity tests |
+| `tests/expected.json` | Pinned baseline for published totals |
+| `tests/schema.js` | Allowed field vocabulary and shape rules |
+| `tests/validate-records.js` | Field-level validation, run before the arithmetic |
+| `tests/validate.test.js` | Mutations that arithmetic would swallow must fail validation |
+| `tests/find-archives.js` | Wayback snapshot lookup for every source URL |
+| `tests/export-csv.js` | Regenerates `data/incidents.csv` |
+| `docs/CURRENT_STATE.md` | Before-snapshot of the seed preview at `1d51c76`. Not current figures |
 | `IMPLEMENTATION_PROPOSAL.md` | Stack, timeline, ownership, assumptions |
 | `CONTRIBUTING.md` | Fork + PR / submission rules |
+| `CONTRIBUTORS.md` | Credit. Not ownership |
 | `assets/concept-render.png` | Visual direction only |
+
+`js/evidence.js` is the only file that computes a number. `js/clock.js` renders what it is given and nothing else, so a passing test run means the page cannot be displaying a figure the data does not support.
 
 ## What this is not
 

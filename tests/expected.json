@@ -1,0 +1,146 @@
+{
+  "_purpose": "Pinned baseline. tests/derive.test.js compares the live derivation against these committed numbers. Recomputing expectations from incidents.json alone cannot detect a record being deleted, because both sides move together. Any change here must be deliberate and must ship in the same commit as the data change, with the reason in the record change_log.",
+  "_regenerate": "node tests/update-expected.js",
+  "reviewed": "2026-09-28",
+  "record_count": 16,
+  "headline_count": 10,
+  "headline_ids": [
+    "acc-2024-02-14-air-canada",
+    "acc-2024-10-29-langchain-graphcypherqachain-injection",
+    "acc-2025-06-06-al-haroun-fabricated-authorities",
+    "acc-2025-06-camoleak",
+    "acc-2025-07-18-replit-saastr",
+    "acc-2026-01-13-enclave-vm-sandbox-escape",
+    "acc-2026-01-14-cursor-agent-allowlist-bypass",
+    "acc-2026-03-safe-command-cve",
+    "acc-2026-04-09-praisonai-command-injection",
+    "acc-2026-07-15-mcp-python-sdk-task-authorization"
+  ],
+  "documented_occurrences": 3,
+  "demonstrated_capabilities": 7,
+  "agent_caused": 1,
+  "unauthorized_actions": 1,
+  "authorization_gap": 3,
+  "confirmed_money": {
+    "CAD": 812.02
+  },
+  "geography_not_established": 9,
+  "disclosure_lag_average": 62,
+  "disclosure_lag_n": 10,
+  "axes": {
+    "country": {
+      "United States": {
+        "headline": 2,
+        "excluded": 1
+      },
+      "Canada": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "United Kingdom": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "Australia": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "South Korea": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "Not established by sources": {
+        "headline": 6,
+        "excluded": 3
+      }
+    },
+    "sector": {
+      "software": {
+        "headline": 8,
+        "excluded": 3
+      },
+      "aviation": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "legal": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "automotive": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "government": {
+        "headline": 0,
+        "excluded": 1
+      },
+      "semiconductors": {
+        "headline": 0,
+        "excluded": 1
+      }
+    },
+    "vulnerability": {
+      "prompt_injection": {
+        "headline": 5,
+        "excluded": 2
+      },
+      "data_exposure": {
+        "headline": 1,
+        "excluded": 2
+      },
+      "unauthorized_action": {
+        "headline": 1,
+        "excluded": 1
+      },
+      "containment_failure": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "fabricated_output": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "policy_misrepresentation": {
+        "headline": 1,
+        "excluded": 0
+      },
+      "data_destruction": {
+        "headline": 0,
+        "excluded": 1
+      }
+    },
+    "consequence": {
+      "data": {
+        "headline": 4,
+        "excluded": 3
+      },
+      "infrastructure": {
+        "headline": 4,
+        "excluded": 2
+      },
+      "legal": {
+        "headline": 2,
+        "excluded": 1
+      }
+    },
+    "year": {
+      "2023": {
+        "headline": 0,
+        "excluded": 2
+      },
+      "2024": {
+        "headline": 2,
+        "excluded": 0
+      },
+      "2025": {
+        "headline": 3,
+        "excluded": 0
+      },
+      "2026": {
+        "headline": 5,
+        "excluded": 4
+      }
+    }
+  }
+}
