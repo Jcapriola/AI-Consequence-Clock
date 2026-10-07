@@ -368,6 +368,46 @@
     return VULNERABILITY_DEFINITIONS[category] || null;
   }
 
+  // Feed filter criteria that compare one record field for exact equality.
+  var FILTER_FIELDS = {
+    status: "verification_status",
+    grade: "evidence_grade",
+    category: "category",
+    sector: "sector"
+  };
+
+  // Free text is read from these fields only, so a search cannot match a hidden value.
+  var TEXT_FIELDS = ["title", "organization", "summary"];
+
+  /*
+   * Narrows a list of records for the feed. Criteria are ANDed; a missing or empty
+   * criterion matches everything, and a value no record carries matches nothing.
+   * This only selects records. It computes no number and derive() never calls it, so
+   * no filter a visitor applies can move a headline total.
+   */
+  function filterRecords(records, criteria) {
+    var c = criteria || {};
+    var text = String(c.text || "").trim().toLowerCase();
+    return records.filter(function (record) {
+      var fieldsMatch = Object.keys(FILTER_FIELDS).every(function (name) {
+        return !c[name] || record[FILTER_FIELDS[name]] === c[name];
+      });
+      if (!fieldsMatch) return false;
+      if (c.inHeadline && c.inHeadline !== "all") {
+        var want = c.inHeadline === "headline" ? true : c.inHeadline === "excluded" ? false : null;
+        if (want === null || isHeadlineEligible(record) !== want) return false;
+      }
+      if (!text) return true;
+      // Joined on a newline so a search cannot match across the end of one field.
+      var haystack = TEXT_FIELDS.map(function (f) {
+        return String(record[f] || "");
+      })
+        .join("\n")
+        .toLowerCase();
+      return haystack.indexOf(text) !== -1;
+    });
+  }
+
   return {
     HEADLINE_STATUSES: HEADLINE_STATUSES,
     HEADLINE_GRADES: HEADLINE_GRADES,
@@ -387,6 +427,7 @@
     groupByAxis: groupByAxis,
     averageDisclosureLag: averageDisclosureLag,
     vulnerabilityDefinition: vulnerabilityDefinition,
+    filterRecords: filterRecords,
     derive: derive
   };
 });
