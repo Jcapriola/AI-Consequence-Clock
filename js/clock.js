@@ -563,21 +563,16 @@
    */
   var FILTER_NAMES = ["text", "status", "grade", "category", "sector", "inHeadline"];
 
-  /* Options come from the values present in the data, so no choice can be empty by design. */
+  /* Options come from ClockEvidence.filterOptions(), so no choice can be empty by design. */
   function fillFilterOptions() {
     var form = el("feed-filters");
-    Array.prototype.forEach.call(form.querySelectorAll("select[data-field]"), function (select) {
-      var field = select.dataset.field;
-      var seen = {};
-      STATE.records.forEach(function (r) {
-        if (r[field]) seen[r[field]] = true;
-      });
+    var options = E.filterOptions(STATE.records);
+    Object.keys(options).forEach(function (name) {
       // Review state and grade read as the uppercase codes the pills show.
-      var raw = field === "verification_status" || field === "evidence_grade";
-      select.innerHTML =
+      var raw = name === "status" || name === "grade";
+      form.elements[name].innerHTML =
         '<option value="">Any</option>' +
-        Object.keys(seen)
-          .sort()
+        options[name]
           .map(function (value) {
             return '<option value="' + esc(value) + '">' + esc(raw ? value : humanize(value)) + "</option>";
           })

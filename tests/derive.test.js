@@ -535,6 +535,22 @@ check("lowercase status matches nothing", E.filterRecords(records, { status: "ve
 check("unknown inHeadline matches nothing", E.filterRecords(records, { inHeadline: "maybe" }).length, 0);
 check("unmatched text matches nothing", E.filterRecords(records, { text: "zz-no-record-says-this" }).length, 0);
 
+// Each select offers exactly the values present in the data, so no option is empty.
+const options = E.filterOptions(records);
+check("filter options cover the four selects", Object.keys(options).sort(), Object.keys(FILTER_FIELDS).sort());
+Object.keys(FILTER_FIELDS).forEach((name) => {
+  const field = FILTER_FIELDS[name];
+  check(
+    "options for " + name + " are the distinct values present",
+    options[name],
+    Array.from(new Set(records.map((r) => r[field]).filter(Boolean))).sort()
+  );
+  ok(
+    "every " + name + " option matches at least one record",
+    options[name].every((value) => E.filterRecords(records, { [name]: value }).length > 0)
+  );
+});
+
 const before = JSON.stringify(E.derive(dataset, FIXED_TODAY));
 const recordsBefore = JSON.stringify(records);
 [{}, { inHeadline: "excluded" }, combined, { sector: "no-such-value" }].forEach((criteria) => {

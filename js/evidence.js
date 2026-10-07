@@ -408,6 +408,23 @@
     });
   }
 
+  /*
+   * The values each feed select offers: those present in the records, sorted, so no
+   * choice can match nothing. Keyed by criterion name, as filterRecords() reads them.
+   */
+  function filterOptions(records) {
+    var options = {};
+    Object.keys(FILTER_FIELDS).forEach(function (name) {
+      var seen = {};
+      records.forEach(function (record) {
+        var value = record[FILTER_FIELDS[name]];
+        if (value) seen[value] = true;
+      });
+      options[name] = Object.keys(seen).sort();
+    });
+    return options;
+  }
+
   return {
     HEADLINE_STATUSES: HEADLINE_STATUSES,
     HEADLINE_GRADES: HEADLINE_GRADES,
@@ -428,6 +445,7 @@
     averageDisclosureLag: averageDisclosureLag,
     vulnerabilityDefinition: vulnerabilityDefinition,
     filterRecords: filterRecords,
+    filterOptions: filterOptions,
     derive: derive
   };
 });
