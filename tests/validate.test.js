@@ -103,6 +103,81 @@ ok(
   })
 );
 
+/*
+ * "Grade is assigned from the sources listed on the record." Each mutation below
+ * computes perfectly, so only the validator can say the grade is not what the file holds.
+ */
+function hasSourceGraded(record, grade) {
+  return (record.sources || []).some(function (s) {
+    return s.evidence_grade === grade;
+  });
+}
+
+console.log("\nValidator: grade above the attached sources");
+var inflated = clone();
+var secondary = firstWhere(function (r) {
+  return E.isHeadlineEligible(r) && !hasSourceGraded(r, "PRIMARY");
+});
+var inflatedRecord = inflated.incidents.find(function (r) {
+  return r.id === secondary.id;
+});
+inflatedRecord.evidence_grade = "PRIMARY";
+inflatedRecord.verification_status = "VERIFIED";
+inflatedRecord.primary_source_url = inflatedRecord.sources.find(function (s) {
+  return s.evidence_grade !== "PRIMARY";
+}).url;
+var inflatedResult = V.validateDataset(inflated);
+ok(
+  "PRIMARY grade with no PRIMARY source attached fails validation by id",
+  inflatedResult.problems.some(function (p) {
+    return p.indexOf(secondary.id) !== -1 && p.indexOf("best attached source") !== -1;
+  })
+);
+
+console.log("\nValidator: grade below the attached sources");
+var under = clone();
+var underRecord = under.incidents.find(function (r) {
+  return r.id === primary.id;
+});
+underRecord.evidence_grade = "INDEPENDENT_SECONDARY";
+ok(
+  "under-grading stays headline-eligible, so arithmetic would not notice",
+  E.isHeadlineEligible(underRecord)
+);
+var underResult = V.validateDataset(under);
+ok(
+  "INDEPENDENT_SECONDARY grade over an attached PRIMARY source fails validation by id",
+  underResult.problems.some(function (p) {
+    return p.indexOf(primary.id) !== -1 && p.indexOf("best attached source is PRIMARY") !== -1;
+  })
+);
+
+console.log("\nValidator: PRIMARY citation pointing at a weaker source");
+var miscited = clone();
+var mixed = firstWhere(function (r) {
+  return (
+    r.evidence_grade === "PRIMARY" &&
+    E.isHeadlineEligible(r) &&
+    hasSourceGraded(r, "PRIMARY") &&
+    (r.sources || []).some(function (s) {
+      return s.evidence_grade !== "PRIMARY";
+    })
+  );
+});
+var miscitedRecord = miscited.incidents.find(function (r) {
+  return r.id === mixed.id;
+});
+miscitedRecord.primary_source_url = miscitedRecord.sources.find(function (s) {
+  return s.evidence_grade !== "PRIMARY";
+}).url;
+var miscitedResult = V.validateDataset(miscited);
+ok(
+  "PRIMARY record citing an attached non-PRIMARY source fails validation by id",
+  miscitedResult.problems.some(function (p) {
+    return p.indexOf(mixed.id) !== -1 && /primary_source_url points at a \w+ source/.test(p);
+  })
+);
+
 console.log("\nValidator: geography");
 var geo = clone();
 geo.incidents.forEach(function (r) {
