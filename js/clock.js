@@ -49,8 +49,19 @@
     return String(value || "").replace(/_/g, " ");
   }
 
+  /*
+   * The visitor's calendar date, not UTC's. toISOString() is UTC, so anyone far from
+   * Greenwich saw the day counter run a day early or late for part of every day.
+   */
   function today() {
-    return new Date().toISOString().slice(0, 10);
+    var d = new Date();
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
   }
 
   function formatMoney(byCurrency) {
@@ -292,7 +303,8 @@
   /* ---------------------------------------------------------------- dialog */
 
   function openSheet(title, subtitle, records) {
-    lastFocus = document.activeElement;
+    // Moving between views inside an open sheet must not forget what opened it.
+    if (!el("modal").classList.contains("open")) lastFocus = document.activeElement;
     el("sheet-title").textContent = title;
     el("sheet-sub").textContent = subtitle;
     el("sheet-body").innerHTML = records.length
@@ -310,8 +322,48 @@
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
-    if (location.hash) history.pushState("", document.title, location.pathname + location.search);
+    // Replace rather than push, so Back leaves the closed sheet behind. A record opened from a
+    // filtered feed returns to that filtered feed's link.
+    if (location.hash) history.replaceState(null, document.title, feedHash() || location.pathname + location.search);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  /* Closes the dialog without touching the hash or focus, for navigation that already moved. */
+  function hideSheet() {
+    var modal = el("modal");
+    if (modal.classList.contains("open")) {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+  }
+
+  /*
+   * The sheet is aria-modal, so Tab has to stay inside it. Without this a keyboard
+   * user tabs into the page behind a dialog that still covers it.
+   */
+  function trapFocus(event) {
+    var modal = el("modal");
+    var focusable = Array.prototype.filter.call(
+      modal.querySelectorAll("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"),
+      function (node) {
+        return node.offsetParent !== null;
+      }
+    );
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    var active = document.activeElement;
+    if (!modal.contains(active)) {
+      event.preventDefault();
+      first.focus();
+    } else if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   /* ------------------------------------------------------------------ views */
@@ -408,27 +460,45 @@
   /*
    * Deep links live in the hash so a refresh or a pasted URL reopens the same
    * view. Three shapes: #/record/<id>, #/axis/<axis>/<value>, #/view/<key>.
+   *
+   * A fourth, #/feed?status=VERIFIED&text=..., carries the feed filters. It is read
+   * before the hash is decoded, because each value is encoded on its own and a decoded
+   * "&" or "=" inside a search term would split it. One hash holds one shape, so opening
+   * a record replaces the filters and closing it puts them back.
+   *
+   * Each segment is encoded on the way out and decoded on the way in. A hand-edited
+   * or truncated link with a stray "%" cannot be decoded; it opens the plain page
+   * rather than throwing and leaving the visitor with nothing.
    */
   function applyHash() {
-    var hash = decodeURIComponent(location.hash.replace(/^#/, ""));
-    if (!hash) {
-      var modal = el("modal");
-      if (modal.classList.contains("open")) {
-        modal.classList.remove("open");
-        modal.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("modal-open");
-      }
+    if (location.hash.indexOf(FEED_ROUTE) === 0) {
+      hideSheet();
+      writeFilters(new URLSearchParams(location.hash.slice(FEED_ROUTE.length)));
       return;
     }
-    var parts = hash.split("/").filter(Boolean);
+    var parts;
+    try {
+      parts = location.hash
+        .replace(/^#/, "")
+        .split("/")
+        .filter(Boolean)
+        .map(decodeURIComponent);
+    } catch (e) {
+      parts = [];
+    }
+    if (!parts.length) {
+      if (el("modal").classList.contains("open")) closeSheet();
+      writeFilters(new URLSearchParams());
+      return;
+    }
     if (parts[0] === "record" && parts[1]) showRecord(parts[1]);
     else if (parts[0] === "axis" && parts[1] && parts.length > 2)
       showAxisValue(parts[1], parts.slice(2).join("/"));
     else if (parts[0] === "view" && parts[1]) showSelection(parts[1]);
   }
 
-  function setHash(path) {
-    var next = "#" + path;
+  function setHash(segments) {
+    var next = "#/" + segments.map(encodeURIComponent).join("/");
     if (location.hash === next) applyHash();
     else location.hash = next;
   }
@@ -478,8 +548,113 @@
     renderAxis("consequence", "axis-consequence");
     renderAxis("year", "axis-year");
 
-    var feed = STATE.records
-      .slice()
+    fillFilterOptions();
+    renderFeed();
+
+    attachProvenance(summary);
+  }
+
+  /* ------------------------------------------------------------------ feed */
+
+  /*
+   * The feed is the one place a visitor can narrow what they read. Selection happens in
+   * ClockEvidence.filterRecords(), and summary is never recomputed from its result, so
+   * a filter cannot move a headline total, a KPI, or an axis row.
+   */
+  var FILTER_NAMES = ["text", "status", "grade", "category", "sector", "inHeadline"];
+
+  /* Options come from ClockEvidence.filterOptions(), so no choice can be empty by design. */
+  function fillFilterOptions() {
+    var form = el("feed-filters");
+    var options = E.filterOptions(STATE.records);
+    Object.keys(options).forEach(function (name) {
+      // Review state and grade read as the uppercase codes the pills show.
+      var raw = name === "status" || name === "grade";
+      form.elements[name].innerHTML =
+        '<option value="">Any</option>' +
+        options[name]
+          .map(function (value) {
+            return '<option value="' + esc(value) + '">' + esc(raw ? value : humanize(value)) + "</option>";
+          })
+          .join("");
+    });
+  }
+
+  function readFilters() {
+    var form = el("feed-filters");
+    var criteria = {};
+    FILTER_NAMES.forEach(function (name) {
+      var value = String(form.elements[name].value || "").trim();
+      // "all" is the headline select's no-filter value; in the search box it is a real term.
+      if (value && !(name === "inHeadline" && value === "all")) criteria[name] = value;
+    });
+    return criteria;
+  }
+
+  /*
+   * Sets the controls from a link. A value the data no longer carries falls back to
+   * "Any" rather than leaving a blank select, and the link is then rewritten to what
+   * the controls actually show, so a stale shared link cannot claim a filter that is
+   * not applied.
+   */
+  function writeFilters(params) {
+    var form = el("feed-filters");
+    FILTER_NAMES.forEach(function (name) {
+      var control = form.elements[name];
+      control.value = params.get(name) || (name === "inHeadline" ? "all" : "");
+      if (control.tagName === "SELECT" && control.selectedIndex === -1) control.selectedIndex = 0;
+    });
+    renderFeed();
+    if (location.hash.indexOf(FEED_ROUTE) === 0) syncFeedHash();
+  }
+
+  function clearFilters() {
+    writeFilters(new URLSearchParams());
+  }
+
+  var FEED_ROUTE = "#/feed?";
+
+  /* Each value is encoded by URLSearchParams. An unfiltered feed has no hash at all. */
+  function feedHash() {
+    var criteria = readFilters();
+    var params = new URLSearchParams();
+    FILTER_NAMES.forEach(function (name) {
+      if (criteria[name]) params.set(name, criteria[name]);
+    });
+    var query = params.toString();
+    return query ? FEED_ROUTE + query : "";
+  }
+
+  /*
+   * Replaced rather than pushed, so typing a search does not leave one history entry per
+   * keystroke. Only an empty or feed hash is replaced: a record, axis, or view link is
+   * never overwritten by a filter change.
+   */
+  function syncFeedHash() {
+    if (location.hash && location.hash.indexOf(FEED_ROUTE) !== 0) return;
+    history.replaceState("", document.title, feedHash() || location.pathname + location.search);
+  }
+
+  function renderFeed() {
+    if (!STATE.summary) return;
+    var criteria = readFilters();
+    var shown = E.filterRecords(STATE.records, criteria);
+    var filtered = Object.keys(criteria).length > 0;
+
+    // The denominator is the derived record count, the same one the headline card shows.
+    el("feed-count").textContent = filtered
+      ? "Showing " + num(shown.length) + " of " + num(STATE.summary.record_count) +
+        " records. Filters narrow this list only; the totals above are unchanged."
+      : "Showing all " + num(STATE.summary.record_count) + " records.";
+
+    if (!shown.length) {
+      el("feed").innerHTML =
+        '<p class="feed-empty">No records match these filters. ' +
+        '<button type="button" class="inline-link" data-clear-filters>Clear filters</button></p>';
+      return;
+    }
+
+    var feed = shown
       .sort(function (a, b) {
         return Date.parse(b.disclosure_date) - Date.parse(a.disclosure_date);
       })
@@ -511,8 +686,6 @@
       })
       .join("");
     el("feed").innerHTML = feed;
-
-    attachProvenance(summary);
   }
 
   async function attachProvenance(summary) {
@@ -589,24 +762,46 @@
   document.addEventListener("click", function (event) {
     var axisLink = event.target.closest("[data-axis]");
     if (axisLink) {
-      setHash("/axis/" + axisLink.dataset.axis + "/" + axisLink.dataset.value);
+      setHash(["axis", axisLink.dataset.axis, axisLink.dataset.value]);
       return;
     }
     var viewLink = event.target.closest("[data-view]");
     if (viewLink) {
-      setHash("/view/" + viewLink.dataset.view);
+      setHash(["view", viewLink.dataset.view]);
       return;
     }
     var recordLink = event.target.closest("[data-record]");
     if (recordLink) {
-      setHash("/record/" + recordLink.dataset.record);
+      setHash(["record", recordLink.dataset.record]);
+      return;
+    }
+    var clear = event.target.closest("[data-clear-filters]");
+    if (clear) {
+      // The empty-state button is removed by the re-render, so focus moves to the bar's.
+      var fromEmptyState = !!clear.closest("#feed");
+      clearFilters();
+      if (fromEmptyState) el("feed-clear").focus();
       return;
     }
     if (event.target.closest(".close") || event.target.id === "modal") closeSheet();
   });
 
+  // Select changes and typing both fire input, so the feed narrows as the visitor works.
+  document.addEventListener("input", function (event) {
+    if (!event.target.closest("#feed-filters")) return;
+    renderFeed();
+    syncFeedHash();
+  });
+
+  // Enter in the search box would otherwise submit the form and reload the page.
+  document.addEventListener("submit", function (event) {
+    if (event.target.id === "feed-filters") event.preventDefault();
+  });
+
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape" && el("modal").classList.contains("open")) closeSheet();
+    if (!el("modal").classList.contains("open")) return;
+    if (event.key === "Escape") closeSheet();
+    else if (event.key === "Tab") trapFocus(event);
   });
 
   window.addEventListener("hashchange", applyHash);
@@ -619,6 +814,8 @@
     .then(function (dataset) {
       render(dataset);
       applyHash();
+      // A shared filter link is about the feed, so open the page where the feed is.
+      if (location.hash.indexOf(FEED_ROUTE) === 0) el("feed-filters").closest(".card").scrollIntoView();
     })
     .catch(function (err) {
       el("updated").textContent = "failed to load seed data";

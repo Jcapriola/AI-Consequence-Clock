@@ -457,6 +457,113 @@ if (headline.length > 0) {
   );
 }
 
+/*
+ * Feed filters. A filter narrows the list a visitor reads and nothing else, so each
+ * criterion is checked against its own recomputation and the totals are checked to be
+ * exactly what they were before any filter ran.
+ */
+console.log("\nFeed filters narrow the list and never the totals");
+const ids = (list) => list.map((r) => r.id).sort();
+
+check("no criteria returns every record", ids(E.filterRecords(records)), ids(records));
+check("empty criteria returns every record", ids(E.filterRecords(records, {})), ids(records));
+
+// Each select narrows on exactly one field, for every value present in the data.
+const FILTER_FIELDS = {
+  status: "verification_status",
+  grade: "evidence_grade",
+  category: "category",
+  sector: "sector"
+};
+Object.keys(FILTER_FIELDS).forEach((name) => {
+  const field = FILTER_FIELDS[name];
+  Array.from(new Set(records.map((r) => r[field]))).forEach((value) => {
+    check(
+      "filter " + name + " = " + value,
+      ids(E.filterRecords(records, { [name]: value })),
+      ids(records.filter((r) => r[field] === value))
+    );
+  });
+});
+
+check("inHeadline headline is the headline set", ids(E.filterRecords(records, { inHeadline: "headline" })), ids(headline));
+check(
+  "inHeadline excluded is the remainder",
+  ids(E.filterRecords(records, { inHeadline: "excluded" })),
+  ids(records.filter((r) => !headline.includes(r)))
+);
+check("inHeadline all returns every record", ids(E.filterRecords(records, { inHeadline: "all" })), ids(records));
+
+// Text search reads title, organization and summary, ignoring case. Literals are taken
+// from the current records: one term per field, so each field is shown to be searched.
+check("text matches a title", ids(E.filterRecords(records, { text: "BEREAVEMENT" })), ["acc-2024-02-14-air-canada"]);
+check("text matches an organization", ids(E.filterRecords(records, { text: "legit security" })), ["acc-2025-06-camoleak"]);
+check("text matches a summary", ids(E.filterRecords(records, { text: "Tribunal" })), ["acc-2024-02-14-air-canada"]);
+check(
+  "text search ignores case and surrounding space",
+  ids(E.filterRecords(records, { text: "  PROMPT injection " })),
+  ids(E.filterRecords(records, { text: "prompt injection" }))
+);
+check(
+  "text search agrees with an independent substring match",
+  ids(E.filterRecords(records, { text: "database" })),
+  ids(records.filter((r) => [r.title, r.organization, r.summary].join("\n").toLowerCase().includes("database")))
+);
+check("blank text matches every record", ids(E.filterRecords(records, { text: "   " })), ids(records));
+
+const combined = { status: "VERIFIED", sector: "software", inHeadline: "headline", text: "prompt injection" };
+check(
+  "criteria AND together",
+  ids(E.filterRecords(records, combined)),
+  ids(
+    headline.filter(
+      (r) =>
+        r.verification_status === "VERIFIED" &&
+        r.sector === "software" &&
+        [r.title, r.organization, r.summary].join("\n").toLowerCase().includes("prompt injection")
+    )
+  )
+);
+ok("the combined example is not trivially empty", E.filterRecords(records, combined).length > 0);
+
+// A value no record carries, including a wrong-case one, matches nothing rather than
+// being ignored. Field values are case-sensitive throughout this project.
+["status", "grade", "category", "sector"].forEach((name) => {
+  check("unknown " + name + " matches nothing", E.filterRecords(records, { [name]: "no-such-value" }).length, 0);
+});
+check("lowercase status matches nothing", E.filterRecords(records, { status: "verified" }).length, 0);
+check("unknown inHeadline matches nothing", E.filterRecords(records, { inHeadline: "maybe" }).length, 0);
+check("unmatched text matches nothing", E.filterRecords(records, { text: "zz-no-record-says-this" }).length, 0);
+
+// Each select offers exactly the values present in the data, so no option is empty.
+const options = E.filterOptions(records);
+check("filter options cover the four selects", Object.keys(options).sort(), Object.keys(FILTER_FIELDS).sort());
+Object.keys(FILTER_FIELDS).forEach((name) => {
+  const field = FILTER_FIELDS[name];
+  check(
+    "options for " + name + " are the distinct values present",
+    options[name],
+    Array.from(new Set(records.map((r) => r[field]).filter(Boolean))).sort()
+  );
+  ok(
+    "every " + name + " option matches at least one record",
+    options[name].every((value) => E.filterRecords(records, { [name]: value }).length > 0)
+  );
+});
+
+const before = JSON.stringify(E.derive(dataset, FIXED_TODAY));
+const recordsBefore = JSON.stringify(records);
+[{}, { inHeadline: "excluded" }, combined, { sector: "no-such-value" }].forEach((criteria) => {
+  const narrowed = E.filterRecords(records, criteria);
+  narrowed.length = 0;
+  check(
+    "filtering by " + JSON.stringify(criteria) + " leaves derive() unchanged",
+    JSON.stringify(E.derive(dataset, FIXED_TODAY)) === before,
+    true
+  );
+});
+check("filtering never mutates the records", JSON.stringify(records) === recordsBefore, true);
+
 console.log("\n" + "-".repeat(64));
 if (failures.length) {
   console.log("FAILED: " + failures.length + " assertion(s) failed, " + passed + " passed.");
