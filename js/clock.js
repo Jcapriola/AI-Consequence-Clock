@@ -292,7 +292,8 @@
   /* ---------------------------------------------------------------- dialog */
 
   function openSheet(title, subtitle, records) {
-    lastFocus = document.activeElement;
+    // Moving between views inside an open sheet must not forget what opened it.
+    if (!el("modal").classList.contains("open")) lastFocus = document.activeElement;
     el("sheet-title").textContent = title;
     el("sheet-sub").textContent = subtitle;
     el("sheet-body").innerHTML = records.length
@@ -312,6 +313,34 @@
     document.body.classList.remove("modal-open");
     if (location.hash) history.pushState("", document.title, location.pathname + location.search);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  /*
+   * The sheet is aria-modal, so Tab has to stay inside it. Without this a keyboard
+   * user tabs into the page behind a dialog that still covers it.
+   */
+  function trapFocus(event) {
+    var modal = el("modal");
+    var focusable = Array.prototype.filter.call(
+      modal.querySelectorAll("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"),
+      function (node) {
+        return node.offsetParent !== null;
+      }
+    );
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    var active = document.activeElement;
+    if (!modal.contains(active)) {
+      event.preventDefault();
+      first.focus();
+    } else if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   /* ------------------------------------------------------------------ views */
@@ -430,6 +459,7 @@
         modal.classList.remove("open");
         modal.setAttribute("aria-hidden", "true");
         document.body.classList.remove("modal-open");
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
       }
       return;
     }
@@ -618,7 +648,9 @@
   });
 
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape" && el("modal").classList.contains("open")) closeSheet();
+    if (!el("modal").classList.contains("open")) return;
+    if (event.key === "Escape") closeSheet();
+    else if (event.key === "Tab") trapFocus(event);
   });
 
   window.addEventListener("hashchange", applyHash);
