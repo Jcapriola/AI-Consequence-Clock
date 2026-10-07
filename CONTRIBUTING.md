@@ -18,6 +18,8 @@ node tests/validate.test.js
 node tests/derive.test.js
 ```
 
+The same checks run automatically on every pull request, along with a check that the generated CSV and baseline match the JSON.
+
 If you changed a record, the suite fails until you run `node tests/update-expected.js` and include the resulting baseline diff — that diff is how a reviewer sees which published totals your change moved.
 
 Run the validator first. It catches the class of error the arithmetic cannot: a record whose `verification_status` reads `verified` in lowercase computes perfectly and silently drops out of every headline total, so the clock gets quieter and nothing reports an error anywhere. Field values are case-sensitive on purpose.
