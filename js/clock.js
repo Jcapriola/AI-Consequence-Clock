@@ -641,7 +641,24 @@
 
   function renderFeed() {
     if (!STATE.summary) return;
-    var feed = E.filterRecords(STATE.records, readFilters())
+    var criteria = readFilters();
+    var shown = E.filterRecords(STATE.records, criteria);
+    var filtered = Object.keys(criteria).length > 0;
+
+    // The denominator is the derived record count, the same one the headline card shows.
+    el("feed-count").textContent = filtered
+      ? "Showing " + num(shown.length) + " of " + num(STATE.summary.record_count) +
+        " records. Filters narrow this list only; the totals above are unchanged."
+      : "Showing all " + num(STATE.summary.record_count) + " records.";
+
+    if (!shown.length) {
+      el("feed").innerHTML =
+        '<p class="feed-empty">No records match these filters. ' +
+        '<button type="button" class="inline-link" data-clear-filters>Clear filters</button></p>';
+      return;
+    }
+
+    var feed = shown
       .sort(function (a, b) {
         return Date.parse(b.disclosure_date) - Date.parse(a.disclosure_date);
       })
@@ -762,8 +779,12 @@
       setHash(["record", recordLink.dataset.record]);
       return;
     }
-    if (event.target.closest("#feed-clear")) {
+    var clear = event.target.closest("[data-clear-filters]");
+    if (clear) {
+      // The empty-state button is removed by the re-render, so focus moves to the bar's.
+      var fromEmptyState = !!clear.closest("#feed");
       clearFilters();
+      if (fromEmptyState) el("feed-clear").focus();
       return;
     }
     if (event.target.closest(".close") || event.target.id === "modal") closeSheet();
@@ -798,7 +819,7 @@
       render(dataset);
       applyHash();
       // A shared filter link is about the feed, so open the page where the feed is.
-      if (location.hash.indexOf(FEED_ROUTE) === 0) el("feed-filters").scrollIntoView();
+      if (location.hash.indexOf(FEED_ROUTE) === 0) el("feed-filters").closest(".card").scrollIntoView();
     })
     .catch(function (err) {
       el("updated").textContent = "failed to load seed data";
