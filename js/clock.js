@@ -49,8 +49,19 @@
     return String(value || "").replace(/_/g, " ");
   }
 
+  /*
+   * The visitor's calendar date, not UTC's. toISOString() is UTC, so anyone far from
+   * Greenwich saw the day counter run a day early or late for part of every day.
+   */
   function today() {
-    return new Date().toISOString().slice(0, 10);
+    var d = new Date();
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
   }
 
   function formatMoney(byCurrency) {
