@@ -408,10 +408,23 @@
   /*
    * Deep links live in the hash so a refresh or a pasted URL reopens the same
    * view. Three shapes: #/record/<id>, #/axis/<axis>/<value>, #/view/<key>.
+   *
+   * Each segment is encoded on the way out and decoded on the way in. A hand-edited
+   * or truncated link with a stray "%" cannot be decoded; it opens the plain page
+   * rather than throwing and leaving the visitor with nothing.
    */
   function applyHash() {
-    var hash = decodeURIComponent(location.hash.replace(/^#/, ""));
-    if (!hash) {
+    var parts;
+    try {
+      parts = location.hash
+        .replace(/^#/, "")
+        .split("/")
+        .filter(Boolean)
+        .map(decodeURIComponent);
+    } catch (e) {
+      parts = [];
+    }
+    if (!parts.length) {
       var modal = el("modal");
       if (modal.classList.contains("open")) {
         modal.classList.remove("open");
@@ -420,15 +433,14 @@
       }
       return;
     }
-    var parts = hash.split("/").filter(Boolean);
     if (parts[0] === "record" && parts[1]) showRecord(parts[1]);
     else if (parts[0] === "axis" && parts[1] && parts.length > 2)
       showAxisValue(parts[1], parts.slice(2).join("/"));
     else if (parts[0] === "view" && parts[1]) showSelection(parts[1]);
   }
 
-  function setHash(path) {
-    var next = "#" + path;
+  function setHash(segments) {
+    var next = "#/" + segments.map(encodeURIComponent).join("/");
     if (location.hash === next) applyHash();
     else location.hash = next;
   }
@@ -589,17 +601,17 @@
   document.addEventListener("click", function (event) {
     var axisLink = event.target.closest("[data-axis]");
     if (axisLink) {
-      setHash("/axis/" + axisLink.dataset.axis + "/" + axisLink.dataset.value);
+      setHash(["axis", axisLink.dataset.axis, axisLink.dataset.value]);
       return;
     }
     var viewLink = event.target.closest("[data-view]");
     if (viewLink) {
-      setHash("/view/" + viewLink.dataset.view);
+      setHash(["view", viewLink.dataset.view]);
       return;
     }
     var recordLink = event.target.closest("[data-record]");
     if (recordLink) {
-      setHash("/record/" + recordLink.dataset.record);
+      setHash(["record", recordLink.dataset.record]);
       return;
     }
     if (event.target.closest(".close") || event.target.id === "modal") closeSheet();
