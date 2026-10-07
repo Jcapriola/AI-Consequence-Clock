@@ -311,7 +311,8 @@
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
-    if (location.hash) history.pushState("", document.title, location.pathname + location.search);
+    // Replace rather than push, so Back leaves the closed sheet behind instead of reopening it.
+    if (location.hash) history.replaceState(null, document.title, location.pathname + location.search);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
