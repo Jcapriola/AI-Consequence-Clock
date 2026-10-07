@@ -87,6 +87,22 @@ records.forEach((r) => {
   }
 });
 
+/*
+ * The reason printed on the card must describe the state the record is in. Only REPORTED
+ * means "one source, not yet corroborated"; saying that about a retracted record would
+ * publish a false reason.
+ */
+console.log("\nStatus-only exclusions name the actual review state");
+const qualifying = records.find((r) => E.isHeadlineEligible(r));
+const reportedDetail = E.exclusion({ ...qualifying, verification_status: "REPORTED" }).detail;
+ok("REPORTED keeps the single-source sentence", /single qualifying source/i.test(reportedDetail));
+["UNDER_REVIEW", "DISPUTED", "RETRACTED"].forEach((status) => {
+  const ex = E.exclusion({ ...qualifying, verification_status: status });
+  check(status + " is excluded on review state alone", ex.code, "status");
+  ok(status + " does not claim a single qualifying source", !/single qualifying source/i.test(ex.detail));
+  ok(status + " detail names the state", ex.detail.indexOf(status) !== -1);
+});
+
 console.log("\nOccurrence split never inflates the incident count");
 const expectedDocumented = headline.filter((r) => r.adversary !== "research_demo").length;
 const expectedDemonstrated = headline.filter((r) => r.adversary === "research_demo").length;
