@@ -42,6 +42,19 @@
   }
 
   /*
+   * The sentence after "review state is X" on a status-only exclusion. It must describe
+   * the state the record is actually in: telling a retracted record it was excluded for
+   * having a single source would publish a false reason on the card.
+   */
+  var STATUS_REASONS = {
+    REPORTED: "A single qualifying source is REPORTED, not CORROBORATED.",
+    UNDER_REVIEW: "It is waiting for a reviewer and does not count until one sets VERIFIED or CORROBORATED.",
+    DISPUTED: "Its facts are disputed, so it does not count while the dispute is open.",
+    RETRACTED: "It has been retracted. It stays in the feed so the correction is visible, but does not count."
+  };
+  var STATUS_REASON_OTHER = "Only VERIFIED and CORROBORATED records count.";
+
+  /*
    * Why a record is not in the headline totals, in the same two axes the
    * methodology defines. A visitor seeing a total of 4 out of 10 needs this or
    * the missing six look like an omission instead of the rule working.
@@ -59,7 +72,7 @@
     } else if (code === "status") {
       detail =
         "Evidence grade " + record.evidence_grade + " qualifies, but review state is " +
-        record.verification_status + ". A single qualifying source is REPORTED, not CORROBORATED.";
+        record.verification_status + ". " + (STATUS_REASONS[record.verification_status] || STATUS_REASON_OTHER);
     } else {
       detail =
         "Review state " + record.verification_status + " qualifies, but attached evidence is " +

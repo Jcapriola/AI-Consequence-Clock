@@ -9,14 +9,25 @@
  *
  *   1. A value outside the published vocabulary. "verified" in lowercase matches no
  *      status, so the record quietly leaves every headline total with no error.
- *   2. A record that claims a headline-qualifying grade without a source that carries
- *      it, which would let a total assert evidence the file does not hold.
+ *   2. A record whose grade is not the best grade among its attached sources, which
+ *      would let a total assert evidence the file does not hold.
  */
 
 var fs = require("fs");
 var path = require("path");
 var S = require(path.join(__dirname, "schema.js"));
 var E = require(path.join(__dirname, "..", "js", "evidence.js"));
+
+/* Weakest first, so a higher index is a stronger grade. */
+var GRADE_ORDER = ["ROUNDUP", "INDEPENDENT_SECONDARY", "PRIMARY"];
+
+function bestSourceGrade(sources) {
+  var best = -1;
+  (sources || []).forEach(function (s) {
+    best = Math.max(best, GRADE_ORDER.indexOf(s && s.evidence_grade));
+  });
+  return best === -1 ? null : GRADE_ORDER[best];
+}
 
 function validateDataset(db) {
   var records = (db && db.incidents) || [];
@@ -186,6 +197,22 @@ records.forEach(function (record, index) {
       }
       checked += 6;
     });
+
+    /*
+     * "Grade is assigned from the sources listed on the record." The record grade must be
+     * the best grade among its attached sources. Above it, a total asserts evidence the
+     * file does not hold. Below it, the record understates what is attached, and a record
+     * marked ROUNDUP over a qualifying source leaves the headline set with no error.
+     */
+    var best = bestSourceGrade(record.sources);
+    if (best && S.ENUMS.evidence_grade.indexOf(record.evidence_grade) !== -1 && record.evidence_grade !== best) {
+      fail(
+        id,
+        "evidence_grade is " + record.evidence_grade + " but the best attached source is " + best +
+          ". Grade follows attached sources only."
+      );
+    }
+    checked++;
   }
 
   /*
@@ -230,17 +257,52 @@ records.forEach(function (record, index) {
       var urls = (record.sources || []).map(function (s) {
         return String(s && s.url).trim();
       });
-      if (urls.indexOf(record.primary_source_url.trim()) === -1) {
+      var cited = (record.sources || [])[urls.indexOf(record.primary_source_url.trim())];
+      if (!cited) {
         fail(id, "primary_source_url is not among the attached sources");
+      } else if (record.evidence_grade === "PRIMARY" && cited.evidence_grade !== "PRIMARY") {
+        fail(
+          id,
+          "evidence_grade is PRIMARY but primary_source_url points at a " + cited.evidence_grade + " source"
+        );
       }
     }
     checked += 3;
   }
 
-  /* A revised record must say what changed. */
+  /*
+   * Dates are checked against the dataset's own review date, not the wall clock, so the
+   * suite stays deterministic. A disclosure after the last review cannot have been
+   * reviewed, and the day counter would clamp it to 0 instead of reporting it.
+   */
+  if (
+    S.isValidIsoDate(String(record.disclosure_date)) &&
+    S.isValidIsoDate(String(db.last_evidence_review)) &&
+    record.disclosure_date > db.last_evidence_review
+  ) {
+    fail(
+      id,
+      "disclosure_date " + record.disclosure_date + " is after last_evidence_review " + db.last_evidence_review
+    );
+  }
+  checked++;
+
+  /*
+   * A revised record must say what changed, and the newest log entry must be for the
+   * revision the record is at. A bumped revision over an old entry is a silent rewrite.
+   */
   if (record.revision && record.revision > 1) {
     if (!Array.isArray(record.change_log) || record.change_log.length === 0) {
       fail(id, "revision " + record.revision + " requires a change_log entry");
+    } else {
+      var last = record.change_log[record.change_log.length - 1];
+      if (!S.isPlainObject(last) || last.revision !== record.revision) {
+        fail(
+          id,
+          "revision is " + record.revision + " but the last change_log entry names " +
+            (S.isPlainObject(last) && last.revision !== undefined ? "revision " + last.revision : "no revision")
+        );
+      }
     }
     checked++;
   }
