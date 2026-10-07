@@ -590,7 +590,8 @@
     var criteria = {};
     FILTER_NAMES.forEach(function (name) {
       var value = String(form.elements[name].value || "").trim();
-      if (value && value !== "all") criteria[name] = value;
+      // "all" is the headline select's no-filter value; in the search box it is a real term.
+      if (value && !(name === "inHeadline" && value === "all")) criteria[name] = value;
     });
     return criteria;
   }
