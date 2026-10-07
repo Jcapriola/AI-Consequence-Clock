@@ -322,9 +322,20 @@
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
-    // Replace rather than push, so Back leaves the closed sheet behind instead of reopening it.
-    if (location.hash) history.replaceState(null, document.title, location.pathname + location.search);
+    // Replace rather than push, so Back leaves the closed sheet behind. A record opened from a
+    // filtered feed returns to that filtered feed's link.
+    if (location.hash) history.replaceState(null, document.title, feedHash() || location.pathname + location.search);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  /* Closes the dialog without touching the hash or focus, for navigation that already moved. */
+  function hideSheet() {
+    var modal = el("modal");
+    if (modal.classList.contains("open")) {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
   }
 
   /*
@@ -450,11 +461,21 @@
    * Deep links live in the hash so a refresh or a pasted URL reopens the same
    * view. Three shapes: #/record/<id>, #/axis/<axis>/<value>, #/view/<key>.
    *
+   * A fourth, #/feed?status=VERIFIED&text=..., carries the feed filters. It is read
+   * before the hash is decoded, because each value is encoded on its own and a decoded
+   * "&" or "=" inside a search term would split it. One hash holds one shape, so opening
+   * a record replaces the filters and closing it puts them back.
+   *
    * Each segment is encoded on the way out and decoded on the way in. A hand-edited
    * or truncated link with a stray "%" cannot be decoded; it opens the plain page
    * rather than throwing and leaving the visitor with nothing.
    */
   function applyHash() {
+    if (location.hash.indexOf(FEED_ROUTE) === 0) {
+      hideSheet();
+      writeFilters(new URLSearchParams(location.hash.slice(FEED_ROUTE.length)));
+      return;
+    }
     var parts;
     try {
       parts = location.hash
@@ -467,6 +488,7 @@
     }
     if (!parts.length) {
       if (el("modal").classList.contains("open")) closeSheet();
+      writeFilters(new URLSearchParams());
       return;
     }
     if (parts[0] === "record" && parts[1]) showRecord(parts[1]);
@@ -573,12 +595,48 @@
     return criteria;
   }
 
-  function clearFilters() {
+  /*
+   * Sets the controls from a link. A value the data no longer carries falls back to
+   * "Any" rather than leaving a blank select, and the link is then rewritten to what
+   * the controls actually show, so a stale shared link cannot claim a filter that is
+   * not applied.
+   */
+  function writeFilters(params) {
     var form = el("feed-filters");
     FILTER_NAMES.forEach(function (name) {
-      form.elements[name].value = name === "inHeadline" ? "all" : "";
+      var control = form.elements[name];
+      control.value = params.get(name) || (name === "inHeadline" ? "all" : "");
+      if (control.tagName === "SELECT" && control.selectedIndex === -1) control.selectedIndex = 0;
     });
     renderFeed();
+    if (location.hash.indexOf(FEED_ROUTE) === 0) syncFeedHash();
+  }
+
+  function clearFilters() {
+    writeFilters(new URLSearchParams());
+  }
+
+  var FEED_ROUTE = "#/feed?";
+
+  /* Each value is encoded by URLSearchParams. An unfiltered feed has no hash at all. */
+  function feedHash() {
+    var criteria = readFilters();
+    var params = new URLSearchParams();
+    FILTER_NAMES.forEach(function (name) {
+      if (criteria[name]) params.set(name, criteria[name]);
+    });
+    var query = params.toString();
+    return query ? FEED_ROUTE + query : "";
+  }
+
+  /*
+   * Replaced rather than pushed, so typing a search does not leave one history entry per
+   * keystroke. Only an empty or feed hash is replaced: a record, axis, or view link is
+   * never overwritten by a filter change.
+   */
+  function syncFeedHash() {
+    if (location.hash && location.hash.indexOf(FEED_ROUTE) !== 0) return;
+    history.replaceState("", document.title, feedHash() || location.pathname + location.search);
   }
 
   function renderFeed() {
@@ -713,7 +771,9 @@
 
   // Select changes and typing both fire input, so the feed narrows as the visitor works.
   document.addEventListener("input", function (event) {
-    if (event.target.closest("#feed-filters")) renderFeed();
+    if (!event.target.closest("#feed-filters")) return;
+    renderFeed();
+    syncFeedHash();
   });
 
   // Enter in the search box would otherwise submit the form and reload the page.
@@ -737,6 +797,8 @@
     .then(function (dataset) {
       render(dataset);
       applyHash();
+      // A shared filter link is about the feed, so open the page where the feed is.
+      if (location.hash.indexOf(FEED_ROUTE) === 0) el("feed-filters").scrollIntoView();
     })
     .catch(function (err) {
       el("updated").textContent = "failed to load seed data";
