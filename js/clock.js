@@ -526,8 +526,64 @@
     renderAxis("consequence", "axis-consequence");
     renderAxis("year", "axis-year");
 
-    var feed = STATE.records
-      .slice()
+    fillFilterOptions();
+    renderFeed();
+
+    attachProvenance(summary);
+  }
+
+  /* ------------------------------------------------------------------ feed */
+
+  /*
+   * The feed is the one place a visitor can narrow what they read. Selection happens in
+   * ClockEvidence.filterRecords(), and summary is never recomputed from its result, so
+   * a filter cannot move a headline total, a KPI, or an axis row.
+   */
+  var FILTER_NAMES = ["text", "status", "grade", "category", "sector", "inHeadline"];
+
+  /* Options come from the values present in the data, so no choice can be empty by design. */
+  function fillFilterOptions() {
+    var form = el("feed-filters");
+    Array.prototype.forEach.call(form.querySelectorAll("select[data-field]"), function (select) {
+      var field = select.dataset.field;
+      var seen = {};
+      STATE.records.forEach(function (r) {
+        if (r[field]) seen[r[field]] = true;
+      });
+      // Review state and grade read as the uppercase codes the pills show.
+      var raw = field === "verification_status" || field === "evidence_grade";
+      select.innerHTML =
+        '<option value="">Any</option>' +
+        Object.keys(seen)
+          .sort()
+          .map(function (value) {
+            return '<option value="' + esc(value) + '">' + esc(raw ? value : humanize(value)) + "</option>";
+          })
+          .join("");
+    });
+  }
+
+  function readFilters() {
+    var form = el("feed-filters");
+    var criteria = {};
+    FILTER_NAMES.forEach(function (name) {
+      var value = String(form.elements[name].value || "").trim();
+      if (value && value !== "all") criteria[name] = value;
+    });
+    return criteria;
+  }
+
+  function clearFilters() {
+    var form = el("feed-filters");
+    FILTER_NAMES.forEach(function (name) {
+      form.elements[name].value = name === "inHeadline" ? "all" : "";
+    });
+    renderFeed();
+  }
+
+  function renderFeed() {
+    if (!STATE.summary) return;
+    var feed = E.filterRecords(STATE.records, readFilters())
       .sort(function (a, b) {
         return Date.parse(b.disclosure_date) - Date.parse(a.disclosure_date);
       })
@@ -559,8 +615,6 @@
       })
       .join("");
     el("feed").innerHTML = feed;
-
-    attachProvenance(summary);
   }
 
   async function attachProvenance(summary) {
@@ -650,7 +704,21 @@
       setHash(["record", recordLink.dataset.record]);
       return;
     }
+    if (event.target.closest("#feed-clear")) {
+      clearFilters();
+      return;
+    }
     if (event.target.closest(".close") || event.target.id === "modal") closeSheet();
+  });
+
+  // Select changes and typing both fire input, so the feed narrows as the visitor works.
+  document.addEventListener("input", function (event) {
+    if (event.target.closest("#feed-filters")) renderFeed();
+  });
+
+  // Enter in the search box would otherwise submit the form and reload the page.
+  document.addEventListener("submit", function (event) {
+    if (event.target.id === "feed-filters") event.preventDefault();
   });
 
   document.addEventListener("keydown", function (event) {

@@ -199,6 +199,56 @@ body {
 
 .days .value { font-size: 64px; color: var(--green); }
 
+/* Feed filters. Compact on purpose: they narrow the list below and nothing else. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  margin: 4px 0 12px;
+}
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  flex: 1 1 140px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-weight: 600;
+}
+.filter-text { flex: 2 1 220px; }
+.filter input,
+.filter select {
+  width: 100%;
+  background: rgba(3, 7, 18, 0.55);
+  color: var(--text);
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.filter select option { background: var(--bg-1); color: var(--text); }
+.filter input:hover,
+.filter select:hover { border-color: var(--stroke-strong); }
+.filter-clear {
+  background: transparent;
+  color: var(--cyan-2);
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.filter-clear:hover { border-color: var(--cyan); color: var(--cyan); }
+
 .feed { max-height: 420px; overflow: auto; }
 .feed-row {
   display: grid;
