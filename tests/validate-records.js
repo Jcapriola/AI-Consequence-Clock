@@ -270,10 +270,39 @@ records.forEach(function (record, index) {
     checked += 3;
   }
 
-  /* A revised record must say what changed. */
+  /*
+   * Dates are checked against the dataset's own review date, not the wall clock, so the
+   * suite stays deterministic. A disclosure after the last review cannot have been
+   * reviewed, and the day counter would clamp it to 0 instead of reporting it.
+   */
+  if (
+    S.isValidIsoDate(String(record.disclosure_date)) &&
+    S.isValidIsoDate(String(db.last_evidence_review)) &&
+    record.disclosure_date > db.last_evidence_review
+  ) {
+    fail(
+      id,
+      "disclosure_date " + record.disclosure_date + " is after last_evidence_review " + db.last_evidence_review
+    );
+  }
+  checked++;
+
+  /*
+   * A revised record must say what changed, and the newest log entry must be for the
+   * revision the record is at. A bumped revision over an old entry is a silent rewrite.
+   */
   if (record.revision && record.revision > 1) {
     if (!Array.isArray(record.change_log) || record.change_log.length === 0) {
       fail(id, "revision " + record.revision + " requires a change_log entry");
+    } else {
+      var last = record.change_log[record.change_log.length - 1];
+      if (!S.isPlainObject(last) || last.revision !== record.revision) {
+        fail(
+          id,
+          "revision is " + record.revision + " but the last change_log entry names " +
+            (S.isPlainObject(last) && last.revision !== undefined ? "revision " + last.revision : "no revision")
+        );
+      }
     }
     checked++;
   }
