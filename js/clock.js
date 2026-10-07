@@ -466,13 +466,7 @@
       parts = [];
     }
     if (!parts.length) {
-      var modal = el("modal");
-      if (modal.classList.contains("open")) {
-        modal.classList.remove("open");
-        modal.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("modal-open");
-        if (lastFocus && lastFocus.focus) lastFocus.focus();
-      }
+      if (el("modal").classList.contains("open")) closeSheet();
       return;
     }
     if (parts[0] === "record" && parts[1]) showRecord(parts[1]);
