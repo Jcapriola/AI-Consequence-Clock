@@ -1,0 +1,30 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate records
+        run: node tests/validate-records.js
+      - name: Validator mutations
+        run: node tests/validate.test.js
+      - name: Derived totals
+        run: node tests/derive.test.js
+
+      # Generated files must match the JSON they come from. update-expected.js
+      # stamps today's date into "reviewed", and export-csv.js writes CRLF, so
+      # those two differences are ignored; anything else fails the build.
+      - name: Generated files are up to date
+        run: |
+          node tests/export-csv.js
+          node tests/update-expected.js
+          git diff --exit-code --ignore-cr-at-eol -I '"reviewed":'
