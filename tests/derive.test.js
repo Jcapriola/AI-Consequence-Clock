@@ -422,6 +422,27 @@ if (fs.existsSync(publishedPath)) {
   check("summary.json hero count", published.hero_count, summary.authorization_gap);
   check("summary.json checksum", published.dataset_checksum_sha256, digest);
   check("summary.json headline rule is unchanged", published.headline_rule, dataset.headline_rule);
+  const provenance = E.comparePublishedSummary(summary, published, digest);
+  check("footer provenance reports a full summary match", provenance.status, "matches");
+  const noSummary = E.comparePublishedSummary(summary, null, digest);
+  check("footer provenance distinguishes a failed summary fetch", noSummary.status, "unavailable");
+  const noCrypto = E.comparePublishedSummary(summary, published, "unavailable in this context");
+  check("footer provenance distinguishes unavailable crypto", noCrypto.status, "matches_without_checksum");
+
+  if (headline.length > 0) {
+    const victim = headline[0].id;
+    const downgraded = {
+      ...dataset,
+      incidents: records.map((r) => (r.id === victim ? { ...r, evidence_grade: "ROUNDUP" } : r))
+    };
+    const afterDowngrade = E.derive(downgraded, FIXED_TODAY);
+    const degradedProvenance = E.comparePublishedSummary(afterDowngrade, published, digest);
+    check("footer provenance detects moved headline totals with the same id checksum", degradedProvenance.status, "differs");
+    ok(
+      "footer provenance names the changed headline count",
+      degradedProvenance.mismatches.indexOf("eligible_record_count") !== -1
+    );
+  }
 } else {
   ok("summary.json exists", false, "data/summary.json is missing");
 }

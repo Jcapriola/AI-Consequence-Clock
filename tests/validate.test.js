@@ -13,6 +13,7 @@ var fs = require("fs");
 var path = require("path");
 var V = require(path.join(__dirname, "validate-records.js"));
 var E = require(path.join(__dirname, "..", "js", "evidence.js"));
+var S = require(path.join(__dirname, "schema.js"));
 
 var dataset = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "incidents.json"), "utf8"));
 
@@ -43,6 +44,47 @@ console.log("Validator: live file");
 var live = V.validateDataset(dataset);
 ok("seed file has no field problems", live.problems.length === 0);
 ok("seed file has records", live.recordCount === dataset.incidents.length);
+
+console.log("\nValidator: methodology vocabulary stays in sync");
+var methodology = fs.readFileSync(path.join(__dirname, "..", "methodology.html"), "utf8");
+var direction = fs.readFileSync(path.join(__dirname, "..", "METHODOLOGY_DIRECTION.md"), "utf8");
+function enumList(name, sep) {
+  return S.ENUMS[name].join(sep || " / ");
+}
+function methodologyEnum(name) {
+  var match = methodology.match(new RegExp('data-enum="' + name + '">([^<]+)</code>'));
+  return match && match[1];
+}
+[
+  "verification_status",
+  "evidence_grade",
+  "causal_role",
+  "adversary",
+  "authorization_evidence",
+  "unauthorized_claim",
+  "reversibility",
+  "consequence_class"
+].forEach(function (name) {
+  ok("methodology.html enum " + name + " matches schema.js", methodologyEnum(name) === enumList(name));
+});
+ok("METHODOLOGY_DIRECTION status vocabulary matches schema.js", direction.indexOf("Status: " + enumList("verification_status")) !== -1);
+ok("METHODOLOGY_DIRECTION grade vocabulary matches schema.js", direction.indexOf("Grade: " + enumList("evidence_grade")) !== -1);
+ok(
+  "METHODOLOGY_DIRECTION authorization vocabulary matches schema.js",
+  direction.indexOf("`" + enumList("authorization_evidence", " | ") + "`") !== -1
+);
+ok(
+  "METHODOLOGY_DIRECTION causal_role vocabulary matches schema.js",
+  direction.indexOf("causal_role: `" + enumList("causal_role", " | ") + "`") !== -1
+);
+ok(
+  "METHODOLOGY_DIRECTION adversary vocabulary matches schema.js",
+  direction.indexOf("adversary: `" + enumList("adversary", " | ") + "`") !== -1
+);
+ok(
+  "METHODOLOGY_DIRECTION consequence vocabulary matches schema.js",
+  direction.indexOf("consequence_class: `" + enumList("consequence_class", " | ") + "`") !== -1
+);
 
 console.log("\nValidator: silent headline drop");
 var lower = clone();

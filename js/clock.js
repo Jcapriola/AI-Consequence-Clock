@@ -714,7 +714,8 @@
     } catch (e) {
       published = null;
     }
-    var match = published && published.dataset_checksum_sha256 === digest;
+    var provenance = E.comparePublishedSummary(summary, published, digest);
+    var digestLabel = /^[0-9a-f]{64}$/i.test(String(digest || "")) ? digest.slice(0, 16) + "…" : "unavailable";
 
     /*
      * Built from the dataset rather than hardcoded, so it cannot drift from the version it
@@ -736,7 +737,7 @@
         " records, " +
         summary.headline_count +
         " in headline totals. Record id digest sha256 " +
-        digest.slice(0, 16) +
+        digestLabel.replace("…", "") +
         ". Accessed " +
         new Date().toISOString().slice(0, 10) +
         ".";
@@ -752,9 +753,9 @@
       " of " +
       summary.record_count +
       " · id sha256 " +
-      digest.slice(0, 16) +
-      "… · " +
-      (match ? "matches summary.json" : "recomputed in browser");
+      digestLabel +
+      " · " +
+      provenance.label;
   }
 
   /* --------------------------------------------------------------- events */

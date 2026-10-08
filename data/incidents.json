@@ -6,7 +6,7 @@
   "dataset_status": "SEED_DEMO",
   "generated_at": "2026-09-24T23:03:00-04:00",
   "last_evidence_review": "2026-09-28",
-  "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP and SUBMISSION records stay in the feed.",
+  "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP records stay in the feed.",
   "limitation": "This seed dataset is a small, curated preview of publicly reported incidents. It is not a global census. Headline counters are derived only from structured fields on these records. Evidence grades are assigned from the sources actually attached to each record, not from general knowledge that better sources exist.",
   "incidents": [
     {

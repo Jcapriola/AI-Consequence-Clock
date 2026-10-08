@@ -32,19 +32,26 @@
 
     <h2>Two independent axes</h2>
     <p>Review state and evidence grade are not the same thing.</p>
+    <p>
+      The allowed values below mirror <code>tests/schema.js</code>, which is the
+      machine-enforced vocabulary used by CI.
+    </p>
+    <p><strong>Verification status vocabulary</strong>: <code data-enum="verification_status">REPORTED / UNDER_REVIEW / VERIFIED / CORROBORATED / DISPUTED / RETRACTED</code></p>
     <p><strong>Verification status</strong> (workflow)</p>
     <ul>
+      <li><strong>REPORTED</strong> — A credible report exists; material facts or sources remain thin.</li>
+      <li><strong>UNDER_REVIEW</strong> — Queue state; not counted until a reviewer sets VERIFIED or CORROBORATED.</li>
       <li><strong>VERIFIED</strong> — Key claims supported by a primary source, or by multiple independent reliable sources.</li>
       <li><strong>CORROBORATED</strong> — At least two independent secondary sources agree. One article is not enough.</li>
-      <li><strong>REPORTED</strong> — A credible report exists; material facts or sources remain thin.</li>
-      <li><strong>UNDER REVIEW / REJECTED</strong> — Queue states.</li>
+      <li><strong>DISPUTED</strong> — Facts are actively disputed; visible in the feed but excluded from headline totals.</li>
+      <li><strong>RETRACTED</strong> — Retraction or correction state; visible for auditability but excluded from headline totals.</li>
     </ul>
+    <p><strong>Evidence grade vocabulary</strong>: <code data-enum="evidence_grade">ROUNDUP / INDEPENDENT_SECONDARY / PRIMARY</code></p>
     <p><strong>Evidence grade</strong> (what is actually attached)</p>
     <ul>
-      <li><strong>PRIMARY</strong> — Filing, court/tribunal record, vendor advisory, official government notice, CVE record from the issuing authority.</li>
-      <li><strong>INDEPENDENT_SECONDARY</strong> — Reputable newsroom or original research report that is not a roundup of other roundups.</li>
       <li><strong>ROUNDUP</strong> — Timeline, incident-database explorer page, or secondary compilation.</li>
-      <li><strong>SUBMISSION</strong> — Community submission awaiting stronger sources.</li>
+      <li><strong>INDEPENDENT_SECONDARY</strong> — Reputable newsroom or original research report that is not a roundup of other roundups.</li>
+      <li><strong>PRIMARY</strong> — Filing, court/tribunal record, vendor advisory, official government notice, CVE record from the issuing authority.</li>
     </ul>
     <p>
       Grade is assigned from the sources listed on the record, not from knowledge that a better source exists somewhere else.
@@ -57,17 +64,17 @@
       <code>verification_status ∈ {VERIFIED, CORROBORATED}</code>
       and
       <code>evidence_grade ∈ {PRIMARY, INDEPENDENT_SECONDARY}</code>.
-      ROUNDUP and SUBMISSION records remain visible in the feed.
+      ROUNDUP records remain visible in the feed.
     </p>
 
     <h2>Differentiating fields</h2>
     <ul>
-      <li><strong>causal_role</strong> — agent_initiated / agent_executed / human_used_ai / model_only / unknown. Agent-caused counts use this field only.</li>
-      <li><strong>adversary</strong> — attacker / no_attacker / research_demo / unknown.</li>
-      <li><strong>authorization_evidence</strong> — signed_artifact / independent_execution_proof / policy_only / ui_confirmation / human_approval / none_documented / unknown.</li>
-      <li><strong>unauthorized_claim</strong> — true / false / unknown. Counted only when explicitly true.</li>
-      <li><strong>reversibility</strong> — rolled_back / irreversible / unknown.</li>
-      <li><strong>consequence_class</strong> — data / money / infrastructure / legal / safety / other.</li>
+      <li><strong>causal_role</strong> — <code data-enum="causal_role">agent_initiated / agent_executed / human_used_ai / unknown</code>. Agent-caused counts use this field only.</li>
+      <li><strong>adversary</strong> — <code data-enum="adversary">attacker / no_attacker / research_demo</code>.</li>
+      <li><strong>authorization_evidence</strong> — <code data-enum="authorization_evidence">none_documented / policy_only / ui_confirmation / human_approval / unknown</code>.</li>
+      <li><strong>unauthorized_claim</strong> — <code data-enum="unauthorized_claim">true / false / unknown</code>. Counted only when explicitly true.</li>
+      <li><strong>reversibility</strong> — <code data-enum="reversibility">rolled_back / irreversible / unknown</code>.</li>
+      <li><strong>consequence_class</strong> — <code data-enum="consequence_class">legal / data / infrastructure / physical / financial</code>.</li>
       <li><strong>disclosure_lag_days</strong> — disclosure_date minus incident_date when both are known.</li>
     </ul>
 

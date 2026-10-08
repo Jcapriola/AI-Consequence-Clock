@@ -355,6 +355,124 @@
     };
   }
 
+  function sorted(values) {
+    return (values || []).slice().sort();
+  }
+
+  function json(value) {
+    return JSON.stringify(value);
+  }
+
+  function moneyAmounts(confirmedMoney) {
+    return Object.keys(confirmedMoney || {})
+      .sort()
+      .reduce(function (acc, currency) {
+        var row = confirmedMoney[currency];
+        acc[currency] = row && typeof row.amount === "number" ? row.amount : row;
+        return acc;
+      }, {});
+  }
+
+  function axisSummary(axes) {
+    return Object.keys(axes || {})
+      .sort()
+      .reduce(function (acc, axisName) {
+        acc[axisName] = (axes[axisName] || []).map(function (g) {
+          return {
+            label: g.label,
+            supported: g.supported,
+            headline: g.headline,
+            excluded: g.excluded
+          };
+        });
+        return acc;
+      }, {});
+  }
+
+  function publishedProjection(summary) {
+    return {
+      record_count: summary.record_count,
+      eligible_record_count: summary.headline_count,
+      record_ids: sorted(summary.headline_ids),
+      hero_count: summary.authorization_gap,
+      occurrence_split: {
+        documented_occurrences: summary.documented_occurrences,
+        demonstrated_capabilities: summary.demonstrated_capabilities
+      },
+      agent_caused: summary.agent_caused,
+      unauthorized_actions: summary.unauthorized_actions,
+      confirmed_money: moneyAmounts(summary.confirmed_money),
+      geography_not_established: summary.geography_unsupported,
+      axes: axisSummary(summary.axes)
+    };
+  }
+
+  function normalizedPublished(published) {
+    return {
+      record_count: published.record_count,
+      eligible_record_count: published.eligible_record_count,
+      record_ids: sorted(published.record_ids),
+      hero_count: published.hero_count,
+      occurrence_split: {
+        documented_occurrences: published.occurrence_split && published.occurrence_split.documented_occurrences,
+        demonstrated_capabilities: published.occurrence_split && published.occurrence_split.demonstrated_capabilities
+      },
+      agent_caused: published.agent_caused,
+      unauthorized_actions: published.unauthorized_actions,
+      confirmed_money: published.confirmed_money || {},
+      geography_not_established: published.geography_not_established,
+      axes: axisSummary(published.axes)
+    };
+  }
+
+  /*
+   * The footer says whether the browser recomputation agrees with data/summary.json.
+   * The old check used only a checksum of all incident ids, so changing a record from
+   * PRIMARY to ROUNDUP left the digest unchanged while the headline count moved. Compare
+   * the published totals themselves, and reserve checksum-only states for actual checksum
+   * availability/fetch problems.
+   */
+  function comparePublishedSummary(summary, published, digest) {
+    if (!published) {
+      return {
+        status: "unavailable",
+        matches: false,
+        mismatches: [],
+        label: "summary.json unavailable; recomputed in browser"
+      };
+    }
+
+    var expected = publishedProjection(summary);
+    var actual = normalizedPublished(published);
+    var mismatches = Object.keys(expected).filter(function (key) {
+      return json(expected[key]) !== json(actual[key]);
+    });
+
+    if (/^[0-9a-f]{64}$/i.test(String(digest || ""))) {
+      if (published.dataset_checksum_sha256 !== digest) mismatches.push("dataset_checksum_sha256");
+    }
+
+    if (mismatches.length) {
+      return {
+        status: "differs",
+        matches: false,
+        mismatches: mismatches,
+        label: "differs from summary.json: " + mismatches.slice(0, 3).join(", ")
+      };
+    }
+
+    if (!/^[0-9a-f]{64}$/i.test(String(digest || ""))) {
+      return {
+        status: "matches_without_checksum",
+        matches: true,
+        mismatches: [],
+        label: "derived totals match summary.json; checksum unavailable"
+      };
+    }
+
+    return { status: "matches", matches: true, mismatches: [], label: "matches summary.json" };
+  }
+
   /*
    * Neutral definitions for the vulnerability classes present in the data.
    * Written from the field taxonomy in METHODOLOGY_DIRECTION.md. Any class not
@@ -456,6 +574,7 @@
     estimatedMoney: estimatedMoney,
     groupByAxis: groupByAxis,
     averageDisclosureLag: averageDisclosureLag,
+    comparePublishedSummary: comparePublishedSummary,
     vulnerabilityDefinition: vulnerabilityDefinition,
     filterRecords: filterRecords,
     filterOptions: filterOptions,

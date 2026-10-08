@@ -2,6 +2,12 @@
 
 Canonical project control stays with AI Blockchain Ventures LLC / AI Modularity.
 
+## License and contribution terms
+
+No open-source license has been granted for this repository yet. The Apache-2.0 note in `IMPLEMENTATION_PROPOSAL.md` is a pending-counsel proposal, not the current license. Do not assume Apache-2.0 or any other OSI license until a `LICENSE` file is added.
+
+The CLA decision is also pending counsel. Until that is settled, contributors should only submit material they have the right to contribute and should expect maintainers to ask for explicit contribution terms before accepting substantial code, data, or documentation changes.
+
 ## Code
 
 1. Fork the canonical repository.

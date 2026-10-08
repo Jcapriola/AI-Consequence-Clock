@@ -6,6 +6,10 @@ Open, auditable measurement of publicly verifiable AI consequences.
 
 This folder is a Milestone 0/1 starter: a public page, a methodology page, a sourced seed dataset, and an implementation proposal that answers section 15 of the development specification.
 
+## License status
+
+No open-source license has been granted yet. Apache-2.0 is listed in `IMPLEMENTATION_PROPOSAL.md` as pending counsel, not as the current license. Do not assume reuse rights until a `LICENSE` file is added.
+
 ## Trust model
 
 **AI discovers. Evidence verifies. Sources remain visible.**
