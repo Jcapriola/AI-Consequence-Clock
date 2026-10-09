@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -16,6 +17,7 @@
     code { color: #e8f4ff; }
   </style>
 </head>
+
 <body>
   <div class="page prose">
     <nav class="nav" style="justify-content:flex-start;margin-bottom:18px">
@@ -34,20 +36,25 @@
     <p>Review state and evidence grade are not the same thing.</p>
     <p><strong>Verification status</strong> (workflow)</p>
     <ul>
-      <li><strong>VERIFIED</strong> — Key claims supported by a primary source, or by multiple independent reliable sources.</li>
-      <li><strong>CORROBORATED</strong> — At least two independent secondary sources agree. One article is not enough.</li>
+      <li><strong>VERIFIED</strong> — Key claims supported by a primary source, or by multiple independent reliable
+        sources.</li>
+      <li><strong>CORROBORATED</strong> — At least two independent secondary sources agree. One article is not enough.
+      </li>
       <li><strong>REPORTED</strong> — A credible report exists; material facts or sources remain thin.</li>
       <li><strong>UNDER REVIEW / REJECTED</strong> — Queue states.</li>
     </ul>
     <p><strong>Evidence grade</strong> (what is actually attached)</p>
     <ul>
-      <li><strong>PRIMARY</strong> — Filing, court/tribunal record, vendor advisory, official government notice, CVE record from the issuing authority.</li>
-      <li><strong>INDEPENDENT_SECONDARY</strong> — Reputable newsroom or original research report that is not a roundup of other roundups.</li>
+      <li><strong>PRIMARY</strong> — Filing, court/tribunal record, vendor advisory, official government notice, CVE
+        record from the issuing authority.</li>
+      <li><strong>INDEPENDENT_SECONDARY</strong> — Reputable newsroom or original research report that is not a roundup
+        of other roundups.</li>
       <li><strong>ROUNDUP</strong> — Timeline, incident-database explorer page, or secondary compilation.</li>
       <li><strong>SUBMISSION</strong> — Community submission awaiting stronger sources.</li>
     </ul>
     <p>
-      Grade is assigned from the sources listed on the record, not from knowledge that a better source exists somewhere else.
+      Grade is assigned from the sources listed on the record, not from knowledge that a better source exists somewhere
+      else.
       One Bloomberg link is INDEPENDENT_SECONDARY and, by itself, REPORTED — not CORROBORATED.
     </p>
 
@@ -60,11 +67,30 @@
       ROUNDUP and SUBMISSION records remain visible in the feed.
     </p>
 
+    <h2>How much the count depends on the rule</h2>
+    <p>
+      The number of records the clock counts comes from the headline rule above. A
+      stricter or a looser rule would give a different number from the same records.
+      The table below shows the count under six rules, from the strictest to no filter
+      at all, so you can see how much the published figure depends on which rule is
+      used. The highlighted row is the rule the clock uses today. This table does not
+      change it.
+    </p>
+    <p>
+      Each row has two separate counts: records where something happened, and records
+      where something was only shown to be possible. They are never added together,
+      because that would suggest more real events than the sources describe. Hover or
+      focus the question mark beside a rule to read what it admits.
+    </p>
+    <div class="card" id="sensitivity"></div>
+
     <h2>Differentiating fields</h2>
     <ul>
-      <li><strong>causal_role</strong> — agent_initiated / agent_executed / human_used_ai / model_only / unknown. Agent-caused counts use this field only.</li>
+      <li><strong>causal_role</strong> — agent_initiated / agent_executed / human_used_ai / model_only / unknown.
+        Agent-caused counts use this field only.</li>
       <li><strong>adversary</strong> — attacker / no_attacker / research_demo / unknown.</li>
-      <li><strong>authorization_evidence</strong> — signed_artifact / independent_execution_proof / policy_only / ui_confirmation / human_approval / none_documented / unknown.</li>
+      <li><strong>authorization_evidence</strong> — signed_artifact / independent_execution_proof / policy_only /
+        ui_confirmation / human_approval / none_documented / unknown.</li>
       <li><strong>unauthorized_claim</strong> — true / false / unknown. Counted only when explicitly true.</li>
       <li><strong>reversibility</strong> — rolled_back / irreversible / unknown.</li>
       <li><strong>consequence_class</strong> — data / money / infrastructure / legal / safety / other.</li>
@@ -226,7 +252,76 @@
       move together. The pinned baseline makes any movement in a published number a
       deliberate, reviewable change rather than a silent one.
     </p>
+
+    <h2>Appendix: counting pieces of evidence, not publisher names</h2>
+    <p>
+      A record is marked corroborated when two sources from different publishers support
+      it. Today, "different" means only that the publishers have different names. That
+      is not the same as independent. Take an invented example, not a record in this
+      dataset: two news sites each write their own article about the same security flaw,
+      in their own words, and both take every fact from one official notice. The wording
+      differs and the publishers differ, so the check passes. There is one witness,
+      counted twice.
+    </p>
+    <p>
+      To tell those cases apart, a reviewer can record where each source got its
+      information: it is original evidence, it repeats another source, or nobody knows.
+      When a source repeats another, the reviewer notes which one, and where the source
+      says so. A source with nothing recorded is treated as not known. Nothing is
+      guessed from titles, dates, or similar wording.
+    </p>
+    <p>
+      With that recorded, sources that share an origin are grouped and counted once. Two
+      sources are grouped when they come from the same publisher or the same website,
+      when one cites the other, or when both cite the same outside origin. A roundup
+      article is not counted as evidence, but it can still show that two articles drew
+      on the same thing. Because sources from one publisher are always grouped, this
+      count can never be higher than the number of publishers. It can only be stricter
+      than the existing check, never more generous.
+    </p>
+    <p>
+      Each counted record then gets one of the four results in the table below. If any
+      source a result rests on has no origin recorded, the result is "not known yet",
+      whatever the other sources add up to. Leaving the unknown sources out and
+      reporting on the rest would give an optimistic answer that only looks careful,
+      which is what this audit exists to avoid.
+    </p>
+    <div class="card" id="provenance-audit"></div>
+    <p>
+      This audit is an additional view. It changes no published number and no counting
+      rule, and it is shown beside the headline figures, never in their place. Recording
+      where a source got its information is a human judgement, made one source at a
+      time, and no tool fills it in. Until a reviewer has done that, counted records
+      show as not known yet, and this page draws no conclusion from the table above. On
+      the clock, each record has a section, "Where the facts came from", that draws the
+      same grouping as a picture.
+    </p>
+    <p>
+      The same mistake appears with AI systems. When several AI models give the same
+      answer, or one model is asked several times and agrees with itself, that is
+      agreement, not independence, if they all learned from the same material. Counting
+      votes without counting where they came from overstates confidence in the same way.
+      This project measures the problem in its own records because that is a small
+      version of it that anyone can check.
+    </p>
+    <p>What this audit cannot do:</p>
+    <ul>
+      <li>
+        A person decides where each source got its information. That is still a
+        judgement.
+      </li>
+      <li>A source that does not say where its information came from stays not known.</li>
+      <li>It cannot see a shared origin that neither source mentions.</li>
+      <li>
+        Sources on the same website are treated as one. Two unrelated authors on one
+        platform are therefore counted once. The possible error is counting too few
+        pieces of evidence, never too many.
+      </li>
+    </ul>
     <p><a href="./index.html">Return to the clock</a></p>
   </div>
+  <script src="./js/evidence.js"></script>
+  <script src="./js/methodology.js"></script>
 </body>
+
 </html>

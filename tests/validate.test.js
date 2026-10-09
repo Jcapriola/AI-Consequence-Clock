@@ -119,6 +119,155 @@ ok(
   })
 );
 
+console.log("\nValidator: fields that must not contradict each other");
+function mutated(pred, mutate) {
+  var copy = clone();
+  var target = firstWhere(pred);
+  mutate(
+    copy.incidents.find(function (r) {
+      return r.id === target.id;
+    })
+  );
+  return { id: target.id, problems: V.validateDataset(copy).problems };
+}
+function rejects(name, result, pattern) {
+  ok(
+    name,
+    result.problems.some(function (p) {
+      return p.indexOf(result.id) !== -1 && pattern.test(p);
+    })
+  );
+}
+function any() {
+  return true;
+}
+
+rejects(
+  "a record graded above its best source fails",
+  mutated(
+    function (r) {
+      return r.evidence_grade === "ROUNDUP";
+    },
+    function (r) {
+      r.evidence_grade = "PRIMARY";
+    }
+  ),
+  /exceeds the best grade on any attached source/
+);
+rejects(
+  "CORROBORATED on a feed-only record still needs two qualifying publishers",
+  mutated(
+    function (r) {
+      return r.evidence_grade === "ROUNDUP";
+    },
+    function (r) {
+      r.verification_status = "CORROBORATED";
+    }
+  ),
+  /CORROBORATED but carries fewer than two/
+);
+rejects(
+  "a missing disclosure_lag_days fails",
+  mutated(any, function (r) {
+    delete r.disclosure_lag_days;
+  }),
+  /disclosure_lag_days is required/
+);
+rejects(
+  "a lag with no incident_date fails",
+  mutated(any, function (r) {
+    r.incident_date = null;
+  }),
+  /disclosure_lag_days must be null when incident_date is null/
+);
+rejects(
+  "a lag that is not a number fails",
+  mutated(any, function (r) {
+    r.disclosure_lag_days = "3";
+  }),
+  /disclosure_lag_days must be a number or null/
+);
+rejects(
+  "rolled_back true against an irreversible record fails",
+  mutated(
+    function (r) {
+      return r.reversibility === "irreversible";
+    },
+    function (r) {
+      r.rolled_back = true;
+    }
+  ),
+  /rolled_back is true but reversibility is "irreversible"/
+);
+rejects(
+  "reversibility rolled_back with rolled_back false fails",
+  mutated(
+    function (r) {
+      return r.reversibility === "rolled_back";
+    },
+    function (r) {
+      r.rolled_back = false;
+    }
+  ),
+  /rolled_back is false but reversibility is "rolled_back"/
+);
+rejects(
+  "primary_source_url pointing at a non-PRIMARY source fails",
+  mutated(
+    function (r) {
+      return (
+        !!r.primary_source_url &&
+        r.sources.some(function (s) {
+          return s.evidence_grade !== "PRIMARY";
+        })
+      );
+    },
+    function (r) {
+      r.primary_source_url = r.sources.find(function (s) {
+        return s.evidence_grade !== "PRIMARY";
+      }).url;
+    }
+  ),
+  /primary_source_url points at a source that is not graded PRIMARY/
+);
+rejects(
+  "primary_source_url on a feed-only record must still be attached",
+  mutated(
+    function (r) {
+      return !E.isHeadlineEligible(r);
+    },
+    function (r) {
+      r.primary_source_url = "https://unattached.example/document";
+    }
+  ),
+  /primary_source_url is not among the attached sources/
+);
+rejects(
+  "a record graded while none of its sources carries a valid grade fails",
+  mutated(any, function (r) {
+    r.sources.forEach(function (s) {
+      s.evidence_grade = "primary";
+    });
+  }),
+  /exceeds the best grade on any attached source, none/
+);
+rejects(
+  "a security_research_roundup graded above ROUNDUP fails",
+  mutated(
+    function (r) {
+      return r.sources.some(function (s) {
+        return s.source_type === "security_research_roundup";
+      });
+    },
+    function (r) {
+      r.sources.find(function (s) {
+        return s.source_type === "security_research_roundup";
+      }).evidence_grade = "INDEPENDENT_SECONDARY";
+    }
+  ),
+  /security_research_roundup and cannot be graded above ROUNDUP/
+);
+
 console.log("\n" + "-".repeat(64));
 if (failed) {
   console.log("FAILED: " + failed + " assertion(s) failed, " + passed + " passed.");

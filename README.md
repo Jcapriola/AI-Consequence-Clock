@@ -31,11 +31,19 @@ If you open `index.html` as a file:// URL, `fetch` of the JSON may be blocked by
 node tests/derive.test.js
 node tests/validate-records.js
 node tests/validate.test.js
+node tests/sensitivity.test.js
+node tests/methodology-render.test.js
+node tests/provenance.test.js
+node tests/source-graph.test.js
 ```
 
-`derive.test.js` recomputes every published total from `data/incidents.json` and compares them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework. `validate.test.js` mutates a copy of the file: a lowercase `verified` status, a `javascript:` archive URL, a PRIMARY record with no named primary document, and the geography placeholder `Unknown` must each fail validation. The live file must not.
+`derive.test.js` recomputes every published total from `data/incidents.json` and compares them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework. `validate.test.js` mutates a copy of the file: a lowercase `verified` status, a `javascript:` archive URL, a PRIMARY record with no named primary document, and the geography placeholder `Unknown` must each fail validation. The live file must not. The same file mutates pairs of fields that state one fact twice, such as `rolled_back` against `reversibility` or a record graded above its best source, and each contradiction must fail.
 
 `validate-records.js` checks every field on every record against the allowed vocabulary and shape before any arithmetic runs.
+
+`sensitivity.test.js` checks the table on the methodology page that shows what the headline count would be under six rule sets, from strictest to no filter. The published row must select exactly what the published rule selects. `methodology-render.test.js` runs the script that draws that table against a stand-in DOM node: the figures shown must be the figures `js/evidence.js` computed, hostile strings must arrive escaped, and a failed load must leave a message and no table.
+
+`provenance.test.js` covers the optional `provenance` annotation on a source and the root count derived from it. Two publishers restating one advisory are two names and one root of evidence; fixtures with a known answer pin that, and the validator must reject a malformed annotation, one mutation per rule. No real record is annotated, so every counted record currently reads `INDETERMINATE`. `docs/annotating-provenance.md` is the annotation guide. Each record card on the dashboard has a "Where the facts came from" section that draws those roots as a graph; `source-graph.test.js` checks it.
 
 If you change a record, the suite will fail until you regenerate the baseline and the published summary:
 
@@ -46,11 +54,12 @@ node tests/derive.test.js
 
 The diff is the review surface: it shows exactly which published totals your record change moved.
 
-Two more tools, neither required to pass:
+Three more tools, none required to pass:
 
 ```bash
 node tests/find-archives.js    # look up a Wayback snapshot for every source URL
 node tests/export-csv.js       # regenerate data/incidents.csv from the JSON
+node scripts/provenance-report.js   # independence audit and the annotation backlog
 ```
 
 `find-archives.js` distinguishes three outcomes and never conflates them: a snapshot was found, no snapshot exists, or the lookup failed. A failed lookup leaves the source untouched, because a dataset that separates verified from unverified must not let its own tooling record an absence it did not observe.
@@ -93,11 +102,19 @@ Money columns stay separate and currency-tagged. They are read from `financial_l
 | `css/clock.css` | UI |
 | `js/evidence.js` | All counter derivation, loaded by the page and the tests |
 | `js/clock.js` | Rendering only |
+| `js/source-graph.js` | Rendering only: the "Where the facts came from" graph on a record card |
+| `js/methodology.js` | Rendering only: the sensitivity table and the independence audit on the methodology page |
 | `tests/derive.test.js` | Counter and integrity tests |
 | `tests/expected.json` | Pinned baseline for published totals |
 | `tests/schema.js` | Allowed field vocabulary and shape rules |
 | `tests/validate-records.js` | Field-level validation, run before the arithmetic |
 | `tests/validate.test.js` | Mutations that arithmetic would swallow must fail validation |
+| `tests/sensitivity.test.js` | The sensitivity table agrees with the published rule and the pinned baseline |
+| `tests/methodology-render.test.js` | The methodology page renders that table escaped, and fails legibly |
+| `tests/provenance.test.js` | Source-root fixtures, properties, and validator mutations for `provenance` |
+| `tests/source-graph.test.js` | The source graph draws one box per source, escaped, with the audit's verdict |
+| `scripts/provenance-report.js` | Prints the independence audit and the annotation backlog. Reads, never writes |
+| `docs/annotating-provenance.md` | How to annotate a source's provenance. When in doubt, `UNKNOWN` |
 | `tests/find-archives.js` | Wayback snapshot lookup for every source URL |
 | `tests/export-csv.js` | Regenerates `data/incidents.csv` |
 | `docs/CURRENT_STATE.md` | Before-snapshot of the seed preview at `1d51c76`. Not current figures |
@@ -106,7 +123,7 @@ Money columns stay separate and currency-tagged. They are read from `financial_l
 | `CONTRIBUTORS.md` | Credit. Not ownership |
 | `assets/concept-render.png` | Visual direction only |
 
-`js/evidence.js` is the only file that computes a number. `js/clock.js` renders what it is given and nothing else, so a passing test run means the page cannot be displaying a figure the data does not support.
+`js/evidence.js` is the only file that computes a number. `js/clock.js`, `js/methodology.js` and `js/source-graph.js` render what they are given and nothing else, so a passing test run means the page cannot be displaying a figure the data does not support.
 
 ## What this is not
 
