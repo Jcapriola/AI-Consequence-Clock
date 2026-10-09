@@ -368,6 +368,81 @@
     return VULNERABILITY_DEFINITIONS[category] || null;
   }
 
+  /*
+   * The headline rule is one defensible choice among several. Each rule set below contains
+   * every record the previous one does, so the table shows how far the published total moves
+   * when the rule moves. R3 reads the published constants, so it cannot drift from them.
+   */
+  var RULE_SETS = [
+    {
+      id: "R1",
+      label: "Strictest",
+      rationale: "Corroborated, with a primary source.",
+      statuses: ["CORROBORATED"],
+      grades: ["PRIMARY"]
+    },
+    {
+      id: "R2",
+      label: "Strict",
+      rationale: "Verified or corroborated, primary source only.",
+      statuses: ["VERIFIED", "CORROBORATED"],
+      grades: ["PRIMARY"]
+    },
+    {
+      id: "R3",
+      label: "Published rule",
+      rationale: "The rule used for the headline counters.",
+      statuses: HEADLINE_STATUSES.slice(),
+      grades: HEADLINE_GRADES.slice()
+    },
+    {
+      id: "R4",
+      label: "Including records under review",
+      rationale: "Adds records still being reviewed.",
+      statuses: ["VERIFIED", "CORROBORATED", "UNDER_REVIEW"],
+      grades: ["PRIMARY", "INDEPENDENT_SECONDARY"]
+    },
+    {
+      id: "R5",
+      label: "Everything not disputed or retracted",
+      rationale: "Adds unverified reports and roundups.",
+      statuses: ["REPORTED", "UNDER_REVIEW", "VERIFIED", "CORROBORATED"],
+      grades: ["ROUNDUP", "INDEPENDENT_SECONDARY", "PRIMARY"]
+    },
+    {
+      id: "R6",
+      label: "Every record in the file",
+      rationale: "No filter.",
+      statuses: ["REPORTED", "UNDER_REVIEW", "VERIFIED", "CORROBORATED", "DISPUTED", "RETRACTED"],
+      grades: ["ROUNDUP", "INDEPENDENT_SECONDARY", "PRIMARY"]
+    }
+  ];
+
+  /*
+   * Documented occurrences and demonstrated capabilities stay in separate columns and are
+   * never added into a combined figure beyond the row total.
+   */
+  function sensitivityTable(records) {
+    return RULE_SETS.map(function (ruleSet) {
+      var picked = records.filter(function (record) {
+        return has(ruleSet.statuses, record.verification_status) && has(ruleSet.grades, record.evidence_grade);
+      });
+      var documented = picked.filter(function (record) {
+        return occurrence(record) === "documented";
+      }).length;
+      return {
+        id: ruleSet.id,
+        label: ruleSet.label,
+        rationale: ruleSet.rationale,
+        published: ruleSet.id === "R3",
+        total: picked.length,
+        documented: documented,
+        demonstrated: picked.length - documented,
+        ids: picked.map(function (record) { return record.id; }).sort()
+      };
+    });
+  }
+
   return {
     HEADLINE_STATUSES: HEADLINE_STATUSES,
     HEADLINE_GRADES: HEADLINE_GRADES,
@@ -387,6 +462,8 @@
     groupByAxis: groupByAxis,
     averageDisclosureLag: averageDisclosureLag,
     vulnerabilityDefinition: vulnerabilityDefinition,
-    derive: derive
+    derive: derive,
+    RULE_SETS: RULE_SETS,
+    sensitivityTable: sensitivityTable
   };
 });
