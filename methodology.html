@@ -6,15 +6,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Methodology · AI Consequence Clock™</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="./css/clock.css" />
   <style>
-    .prose { max-width: 860px; }
-    .prose h1 { font-size: 32px; margin: 8px 0 12px; }
-    .prose h2 { font-size: 20px; margin: 28px 0 8px; }
-    .prose p, .prose li { color: var(--muted); line-height: 1.6; }
-    .prose a { color: var(--cyan-2); }
-    code { color: #e8f4ff; }
+    .prose {
+      max-width: 860px;
+    }
+
+    .prose h1 {
+      font-size: 32px;
+      margin: 8px 0 12px;
+    }
+
+    .prose h2 {
+      font-size: 20px;
+      margin: 28px 0 8px;
+    }
+
+    .prose p,
+    .prose li {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .prose a {
+      color: var(--cyan-2);
+    }
+
+    code {
+      color: #e8f4ff;
+    }
   </style>
 </head>
 
@@ -24,7 +46,8 @@
       <a href="./index.html">← Clock</a>
       <a href="./data/incidents.json">Seed data</a>
     </nav>
-    <p class="sub">Methodology version 0.2.2-preview · 24 September 2026 · evidence layer 0.1.0, reviewed 28 September 2026</p>
+    <p class="sub">Methodology version 0.2.2-preview · 24 September 2026 · evidence layer 0.1.0, reviewed 28 September
+      2026</p>
     <h1>How the clock counts</h1>
     <p>
       The AI Consequence Clock is a measurement layer, not a complete global sensor.
@@ -252,72 +275,6 @@
       move together. The pinned baseline makes any movement in a published number a
       deliberate, reviewable change rather than a silent one.
     </p>
-
-    <h2>Appendix: counting pieces of evidence, not publisher names</h2>
-    <p>
-      A record is marked corroborated when two sources from different publishers support
-      it. Today, "different" means only that the publishers have different names. That
-      is not the same as independent. Take an invented example, not a record in this
-      dataset: two news sites each write their own article about the same security flaw,
-      in their own words, and both take every fact from one official notice. The wording
-      differs and the publishers differ, so the check passes. There is one witness,
-      counted twice.
-    </p>
-    <p>
-      To tell those cases apart, a reviewer can record where each source got its
-      information: it is original evidence, it repeats another source, or nobody knows.
-      When a source repeats another, the reviewer notes which one, and where the source
-      says so. A source with nothing recorded is treated as not known. Nothing is
-      guessed from titles, dates, or similar wording.
-    </p>
-    <p>
-      With that recorded, sources that share an origin are grouped and counted once. Two
-      sources are grouped when they come from the same publisher or the same website,
-      when one cites the other, or when both cite the same outside origin. A roundup
-      article is not counted as evidence, but it can still show that two articles drew
-      on the same thing. Because sources from one publisher are always grouped, this
-      count can never be higher than the number of publishers. It can only be stricter
-      than the existing check, never more generous.
-    </p>
-    <p>
-      Each counted record then gets one of the four results in the table below. If any
-      source a result rests on has no origin recorded, the result is "not known yet",
-      whatever the other sources add up to. Leaving the unknown sources out and
-      reporting on the rest would give an optimistic answer that only looks careful,
-      which is what this audit exists to avoid.
-    </p>
-    <div class="card" id="provenance-audit"></div>
-    <p>
-      This audit is an additional view. It changes no published number and no counting
-      rule, and it is shown beside the headline figures, never in their place. Recording
-      where a source got its information is a human judgement, made one source at a
-      time, and no tool fills it in. Until a reviewer has done that, counted records
-      show as not known yet, and this page draws no conclusion from the table above. On
-      the clock, each record has a section, "Where the facts came from", that draws the
-      same grouping as a picture.
-    </p>
-    <p>
-      The same mistake appears with AI systems. When several AI models give the same
-      answer, or one model is asked several times and agrees with itself, that is
-      agreement, not independence, if they all learned from the same material. Counting
-      votes without counting where they came from overstates confidence in the same way.
-      This project measures the problem in its own records because that is a small
-      version of it that anyone can check.
-    </p>
-    <p>What this audit cannot do:</p>
-    <ul>
-      <li>
-        A person decides where each source got its information. That is still a
-        judgement.
-      </li>
-      <li>A source that does not say where its information came from stays not known.</li>
-      <li>It cannot see a shared origin that neither source mentions.</li>
-      <li>
-        Sources on the same website are treated as one. Two unrelated authors on one
-        platform are therefore counted once. The possible error is counting too few
-        pieces of evidence, never too many.
-      </li>
-    </ul>
     <p><a href="./index.html">Return to the clock</a></p>
   </div>
   <script src="./js/evidence.js"></script>
