@@ -10,8 +10,8 @@ Excellent Milestone 0. Before any public PREVIEW path on AImodularity, use these
    - Do not OR those conditions together.
 
 2. **Verification status ≠ evidence grade.**
-   - Status: VERIFIED / CORROBORATED / REPORTED / UNDER_REVIEW / REJECTED
-   - Grade: PRIMARY / INDEPENDENT_SECONDARY / ROUNDUP / SUBMISSION
+   - Status: REPORTED / UNDER_REVIEW / VERIFIED / CORROBORATED / DISPUTED / RETRACTED
+   - Grade: ROUNDUP / INDEPENDENT_SECONDARY / PRIMARY
    - One secondary source cannot be CORROBORATED.
    - A roundup cannot be PRIMARY.
    - Grade follows attached sources only.
@@ -28,7 +28,13 @@ Plus `unauthorized_claim`.
 
 Authorization evidence taxonomy:
 
-`signed_artifact | independent_execution_proof | policy_only | ui_confirmation | human_approval | none_documented | unknown`
+`none_documented | policy_only | ui_confirmation | human_approval | unknown`
+
+Current validator vocabulary also defines:
+
+- causal_role: `agent_initiated | agent_executed | human_used_ai | unknown`
+- adversary: `attacker | no_attacker | research_demo`
+- consequence_class: `legal | data | infrastructure | physical | financial`
 
 ## Headline rule
 

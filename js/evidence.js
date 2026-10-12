@@ -42,6 +42,19 @@
   }
 
   /*
+   * The sentence after "review state is X" on a status-only exclusion. It must describe
+   * the state the record is actually in: telling a retracted record it was excluded for
+   * having a single source would publish a false reason on the card.
+   */
+  var STATUS_REASONS = {
+    REPORTED: "A single qualifying source is REPORTED, not CORROBORATED.",
+    UNDER_REVIEW: "It is waiting for a reviewer and does not count until one sets VERIFIED or CORROBORATED.",
+    DISPUTED: "Its facts are disputed, so it does not count while the dispute is open.",
+    RETRACTED: "It has been retracted. It stays in the feed so the correction is visible, but does not count."
+  };
+  var STATUS_REASON_OTHER = "Only VERIFIED and CORROBORATED records count.";
+
+  /*
    * Why a record is not in the headline totals, in the same two axes the
    * methodology defines. A visitor seeing a total of 4 out of 10 needs this or
    * the missing six look like an omission instead of the rule working.
@@ -59,7 +72,7 @@
     } else if (code === "status") {
       detail =
         "Evidence grade " + record.evidence_grade + " qualifies, but review state is " +
-        record.verification_status + ". A single qualifying source is REPORTED, not CORROBORATED.";
+        record.verification_status + ". " + (STATUS_REASONS[record.verification_status] || STATUS_REASON_OTHER);
     } else {
       detail =
         "Review state " + record.verification_status + " qualifies, but attached evidence is " +
@@ -340,6 +353,124 @@
         return !geographySupported(r);
       }).length
     };
+  }
+
+  function sorted(values) {
+    return (values || []).slice().sort();
+  }
+
+  function json(value) {
+    return JSON.stringify(value);
+  }
+
+  function moneyAmounts(confirmedMoney) {
+    return Object.keys(confirmedMoney || {})
+      .sort()
+      .reduce(function (acc, currency) {
+        var row = confirmedMoney[currency];
+        acc[currency] = row && typeof row.amount === "number" ? row.amount : row;
+        return acc;
+      }, {});
+  }
+
+  function axisSummary(axes) {
+    return Object.keys(axes || {})
+      .sort()
+      .reduce(function (acc, axisName) {
+        acc[axisName] = (axes[axisName] || []).map(function (g) {
+          return {
+            label: g.label,
+            supported: g.supported,
+            headline: g.headline,
+            excluded: g.excluded
+          };
+        });
+        return acc;
+      }, {});
+  }
+
+  function publishedProjection(summary) {
+    return {
+      record_count: summary.record_count,
+      eligible_record_count: summary.headline_count,
+      record_ids: sorted(summary.headline_ids),
+      hero_count: summary.authorization_gap,
+      occurrence_split: {
+        documented_occurrences: summary.documented_occurrences,
+        demonstrated_capabilities: summary.demonstrated_capabilities
+      },
+      agent_caused: summary.agent_caused,
+      unauthorized_actions: summary.unauthorized_actions,
+      confirmed_money: moneyAmounts(summary.confirmed_money),
+      geography_not_established: summary.geography_unsupported,
+      axes: axisSummary(summary.axes)
+    };
+  }
+
+  function normalizedPublished(published) {
+    return {
+      record_count: published.record_count,
+      eligible_record_count: published.eligible_record_count,
+      record_ids: sorted(published.record_ids),
+      hero_count: published.hero_count,
+      occurrence_split: {
+        documented_occurrences: published.occurrence_split && published.occurrence_split.documented_occurrences,
+        demonstrated_capabilities: published.occurrence_split && published.occurrence_split.demonstrated_capabilities
+      },
+      agent_caused: published.agent_caused,
+      unauthorized_actions: published.unauthorized_actions,
+      confirmed_money: published.confirmed_money || {},
+      geography_not_established: published.geography_not_established,
+      axes: axisSummary(published.axes)
+    };
+  }
+
+  /*
+   * The footer says whether the browser recomputation agrees with data/summary.json.
+   * The old check used only a checksum of all incident ids, so changing a record from
+   * PRIMARY to ROUNDUP left the digest unchanged while the headline count moved. Compare
+   * the published totals themselves, and reserve checksum-only states for actual checksum
+   * availability/fetch problems.
+   */
+  function comparePublishedSummary(summary, published, digest) {
+    if (!published) {
+      return {
+        status: "unavailable",
+        matches: false,
+        mismatches: [],
+        label: "summary.json unavailable; recomputed in browser"
+      };
+    }
+
+    var expected = publishedProjection(summary);
+    var actual = normalizedPublished(published);
+    var mismatches = Object.keys(expected).filter(function (key) {
+      return json(expected[key]) !== json(actual[key]);
+    });
+
+    if (/^[0-9a-f]{64}$/i.test(String(digest || ""))) {
+      if (published.dataset_checksum_sha256 !== digest) mismatches.push("dataset_checksum_sha256");
+    }
+
+    if (mismatches.length) {
+      return {
+        status: "differs",
+        matches: false,
+        mismatches: mismatches,
+        label: "differs from summary.json: " + mismatches.slice(0, 3).join(", ")
+      };
+    }
+
+    if (!/^[0-9a-f]{64}$/i.test(String(digest || ""))) {
+      return {
+        status: "matches_without_checksum",
+        matches: true,
+        mismatches: [],
+        label: "derived totals match summary.json; checksum unavailable"
+      };
+    }
+
+    return { status: "matches", matches: true, mismatches: [], label: "matches summary.json" };
   }
 
   /*
@@ -794,6 +925,63 @@
     return summary;
   }
 
+  // Feed filter criteria that compare one record field for exact equality.
+  var FILTER_FIELDS = {
+    status: "verification_status",
+    grade: "evidence_grade",
+    category: "category",
+    sector: "sector"
+  };
+
+  // Free text is read from these fields only, so a search cannot match a hidden value.
+  var TEXT_FIELDS = ["title", "organization", "summary"];
+
+  /*
+   * Narrows a list of records for the feed. Criteria are ANDed; a missing or empty
+   * criterion matches everything, and a value no record carries matches nothing.
+   * This only selects records. It computes no number and derive() never calls it, so
+   * no filter a visitor applies can move a headline total.
+   */
+  function filterRecords(records, criteria) {
+    var c = criteria || {};
+    var text = String(c.text || "").trim().toLowerCase();
+    return records.filter(function (record) {
+      var fieldsMatch = Object.keys(FILTER_FIELDS).every(function (name) {
+        return !c[name] || record[FILTER_FIELDS[name]] === c[name];
+      });
+      if (!fieldsMatch) return false;
+      if (c.inHeadline && c.inHeadline !== "all") {
+        var want = c.inHeadline === "headline" ? true : c.inHeadline === "excluded" ? false : null;
+        if (want === null || isHeadlineEligible(record) !== want) return false;
+      }
+      if (!text) return true;
+      // Joined on a newline so a search cannot match across the end of one field.
+      var haystack = TEXT_FIELDS.map(function (f) {
+        return String(record[f] || "");
+      })
+        .join("\n")
+        .toLowerCase();
+      return haystack.indexOf(text) !== -1;
+    });
+  }
+
+  /*
+   * The values each feed select offers: those present in the records, sorted, so no
+   * choice can match nothing. Keyed by criterion name, as filterRecords() reads them.
+   */
+  function filterOptions(records) {
+    var options = {};
+    Object.keys(FILTER_FIELDS).forEach(function (name) {
+      var seen = {};
+      records.forEach(function (record) {
+        var value = record[FILTER_FIELDS[name]];
+        if (value) seen[value] = true;
+      });
+      options[name] = Object.keys(seen).sort();
+    });
+    return options;
+  }
+
   return {
     HEADLINE_STATUSES: HEADLINE_STATUSES,
     HEADLINE_GRADES: HEADLINE_GRADES,
@@ -812,7 +1000,10 @@
     estimatedMoney: estimatedMoney,
     groupByAxis: groupByAxis,
     averageDisclosureLag: averageDisclosureLag,
+    comparePublishedSummary: comparePublishedSummary,
     vulnerabilityDefinition: vulnerabilityDefinition,
+    filterRecords: filterRecords,
+    filterOptions: filterOptions,
     derive: derive,
     RULE_SETS: RULE_SETS,
     sensitivityTable: sensitivityTable,

@@ -6,6 +6,10 @@ Open, auditable measurement of publicly verifiable AI consequences.
 
 This folder is a Milestone 0/1 starter: a public page, a methodology page, a sourced seed dataset, and an implementation proposal that answers section 15 of the development specification.
 
+## License status
+
+No open-source license has been granted yet. Apache-2.0 is listed in `IMPLEMENTATION_PROPOSAL.md` as pending counsel, not as the current license. Do not assume reuse rights until a `LICENSE` file is added.
+
 ## Trust model
 
 **AI discovers. Evidence verifies. Sources remain visible.**
@@ -37,7 +41,7 @@ node tests/provenance.test.js
 node tests/source-graph.test.js
 ```
 
-`derive.test.js` recomputes every published total from `data/incidents.json` and compares them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework. `validate.test.js` mutates a copy of the file: a lowercase `verified` status, a `javascript:` archive URL, a PRIMARY record with no named primary document, and the geography placeholder `Unknown` must each fail validation. The live file must not. The same file mutates pairs of fields that state one fact twice, such as `rolled_back` against `reversibility` or a record graded above its best source, and each contradiction must fail.
+`derive.test.js` recomputes every published total from `data/incidents.json` and compares them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework. `validate.test.js` mutates a copy of the file: a lowercase `verified` status, a `javascript:` archive URL, a PRIMARY record with no named primary document, and the geography placeholder `Unknown` must each fail validation. The live file must not. The same file mutates pairs of fields that state one fact twice, such as `rolled_back` against `reversibility`, and each contradiction must fail.
 
 `validate-records.js` checks every field on every record against the allowed vocabulary and shape before any arithmetic runs.
 

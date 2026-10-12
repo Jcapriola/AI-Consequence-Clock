@@ -9,14 +9,25 @@
  *
  *   1. A value outside the published vocabulary. "verified" in lowercase matches no
  *      status, so the record quietly leaves every headline total with no error.
- *   2. A record that claims a headline-qualifying grade without a source that carries
- *      it, which would let a total assert evidence the file does not hold.
+ *   2. A record whose grade is not the best grade among its attached sources, which
+ *      would let a total assert evidence the file does not hold.
  */
 
 var fs = require("fs");
 var path = require("path");
 var S = require(path.join(__dirname, "schema.js"));
 var E = require(path.join(__dirname, "..", "js", "evidence.js"));
+
+/* Weakest first, so a higher index is a stronger grade. */
+var GRADE_ORDER = ["ROUNDUP", "INDEPENDENT_SECONDARY", "PRIMARY"];
+
+function bestSourceGrade(sources) {
+  var best = -1;
+  (sources || []).forEach(function (s) {
+    best = Math.max(best, GRADE_ORDER.indexOf(s && s.evidence_grade));
+  });
+  return best === -1 ? null : GRADE_ORDER[best];
+}
 
 function validateDataset(db) {
   var records = (db && db.incidents) || [];
@@ -32,13 +43,6 @@ function fail(id, message) {
 
 function nonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
-}
-
-/* SOURCE_ENUMS.evidence_grade is listed weakest first. */
-var GRADE_ORDER = S.SOURCE_ENUMS.evidence_grade;
-
-function gradeRank(grade) {
-  return GRADE_ORDER.indexOf(grade);
 }
 
 function attachedSources(record) {
@@ -76,24 +80,14 @@ function checkRollbackAgreement(record, id) {
   }
 }
 
-function checkSourceGrades(record, id) {
-  if (!attachedSources(record).length) return;
-  var best = -1;
+/* A roundup is a compilation of other reports, whatever grade it is given. */
+function checkRoundupGrades(record, id) {
   record.sources.forEach(function (source, si) {
     if (!S.isPlainObject(source)) return;
-    best = Math.max(best, gradeRank(source.evidence_grade));
-    if (source.source_type === "security_research_roundup" && gradeRank(source.evidence_grade) > gradeRank("ROUNDUP")) {
+    if (source.source_type === "security_research_roundup" && source.evidence_grade !== "ROUNDUP") {
       fail(id, "sources[" + si + "] is a security_research_roundup and cannot be graded above ROUNDUP");
     }
   });
-  /* A grade is assigned from the sources attached, so it cannot exceed the best of them. */
-  if (gradeRank(record.evidence_grade) > best) {
-    fail(
-      id,
-      "evidence_grade " + record.evidence_grade + " exceeds the best grade on any attached source, " +
-        (best === -1 ? "none" : GRADE_ORDER[best])
-    );
-  }
 }
 
 /* The headline branch checks counted records. A feed-only CORROBORATED makes the same claim. */
@@ -104,20 +98,13 @@ function checkFeedOnlyCorroboration(record, id) {
   }
 }
 
-function checkPrimarySourceUrl(record, id) {
-  if (!nonEmptyString(record.primary_source_url)) return;
-  var cited = attachedSources(record).filter(function (source) {
+/* The headline branch reports this for counted records. A feed-only record makes the same claim. */
+function checkFeedOnlyPrimaryUrl(record, id) {
+  if (!nonEmptyString(record.primary_source_url) || E.isHeadlineEligible(record)) return;
+  var attached = attachedSources(record).some(function (source) {
     return String(source.url).trim() === record.primary_source_url.trim();
   });
-  var citesPrimary = cited.some(function (source) {
-    return source.evidence_grade === "PRIMARY";
-  });
-  if (cited.length === 0) {
-    /* The headline branch already reports this for counted records. */
-    if (!E.isHeadlineEligible(record)) fail(id, "primary_source_url is not among the attached sources");
-  } else if (!citesPrimary) {
-    fail(id, "primary_source_url points at a source that is not graded PRIMARY");
-  }
+  if (!attached) fail(id, "primary_source_url is not among the attached sources");
 }
 
 /*
@@ -406,14 +393,30 @@ records.forEach(function (record, index) {
       }
       checked += 6;
     });
+
+    /*
+     * "Grade is assigned from the sources listed on the record." The record grade must be
+     * the best grade among its attached sources. Above it, a total asserts evidence the
+     * file does not hold. Below it, the record understates what is attached, and a record
+     * marked ROUNDUP over a qualifying source leaves the headline set with no error.
+     */
+    var best = bestSourceGrade(record.sources);
+    if (best && S.ENUMS.evidence_grade.indexOf(record.evidence_grade) !== -1 && record.evidence_grade !== best) {
+      fail(
+        id,
+        "evidence_grade is " + record.evidence_grade + " but the best attached source is " + best +
+          ". Grade follows attached sources only."
+      );
+    }
+    checked++;
   }
 
   checkDisclosureLag(record, id);
   checkRollbackAgreement(record, id);
   if (Array.isArray(record.sources)) {
-    checkSourceGrades(record, id);
+    checkRoundupGrades(record, id);
     checkFeedOnlyCorroboration(record, id);
-    checkPrimarySourceUrl(record, id);
+    checkFeedOnlyPrimaryUrl(record, id);
     checkProvenance(record, id);
   }
   checked += 6;
@@ -456,17 +459,52 @@ records.forEach(function (record, index) {
       var urls = (record.sources || []).map(function (s) {
         return String(s && s.url).trim();
       });
-      if (urls.indexOf(record.primary_source_url.trim()) === -1) {
+      var cited = (record.sources || [])[urls.indexOf(record.primary_source_url.trim())];
+      if (!cited) {
         fail(id, "primary_source_url is not among the attached sources");
+      } else if (record.evidence_grade === "PRIMARY" && cited.evidence_grade !== "PRIMARY") {
+        fail(
+          id,
+          "evidence_grade is PRIMARY but primary_source_url points at a " + cited.evidence_grade + " source"
+        );
       }
     }
     checked += 3;
   }
 
-  /* A revised record must say what changed. */
+  /*
+   * Dates are checked against the dataset's own review date, not the wall clock, so the
+   * suite stays deterministic. A disclosure after the last review cannot have been
+   * reviewed, and the day counter would clamp it to 0 instead of reporting it.
+   */
+  if (
+    S.isValidIsoDate(String(record.disclosure_date)) &&
+    S.isValidIsoDate(String(db.last_evidence_review)) &&
+    record.disclosure_date > db.last_evidence_review
+  ) {
+    fail(
+      id,
+      "disclosure_date " + record.disclosure_date + " is after last_evidence_review " + db.last_evidence_review
+    );
+  }
+  checked++;
+
+  /*
+   * A revised record must say what changed, and the newest log entry must be for the
+   * revision the record is at. A bumped revision over an old entry is a silent rewrite.
+   */
   if (record.revision && record.revision > 1) {
     if (!Array.isArray(record.change_log) || record.change_log.length === 0) {
       fail(id, "revision " + record.revision + " requires a change_log entry");
+    } else {
+      var last = record.change_log[record.change_log.length - 1];
+      if (!S.isPlainObject(last) || last.revision !== record.revision) {
+        fail(
+          id,
+          "revision is " + record.revision + " but the last change_log entry names " +
+            (S.isPlainObject(last) && last.revision !== undefined ? "revision " + last.revision : "no revision")
+        );
+      }
     }
     checked++;
   }

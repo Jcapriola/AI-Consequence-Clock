@@ -207,6 +207,6 @@
       }
     ]
   },
-  "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP and SUBMISSION records stay in the feed.",
+  "headline_rule": "A record enters headline totals only when verification_status is VERIFIED or CORROBORATED AND evidence_grade is PRIMARY or INDEPENDENT_SECONDARY. ROUNDUP records stay in the feed.",
   "verification": "node tests/derive.test.js"
 }

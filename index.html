@@ -160,6 +160,39 @@
     <h2 class="section-head">Every record</h2>
     <section class="card">
       <div class="label">Disclosure feed · newest first · counted and not counted</div>
+      <!-- Filters narrow this list only. Every total above is computed from all records. -->
+      <form class="filters" id="feed-filters" role="search" aria-label="Filter the disclosure feed" autocomplete="off">
+        <label class="filter filter-text">
+          <span>Search</span>
+          <input type="search" name="text" placeholder="Title, organization or summary" />
+        </label>
+        <label class="filter">
+          <span>Review state</span>
+          <select name="status"></select>
+        </label>
+        <label class="filter">
+          <span>Evidence grade</span>
+          <select name="grade"></select>
+        </label>
+        <label class="filter">
+          <span>Vulnerability class</span>
+          <select name="category"></select>
+        </label>
+        <label class="filter">
+          <span>Sector</span>
+          <select name="sector"></select>
+        </label>
+        <label class="filter">
+          <span>Headline totals</span>
+          <select name="inHeadline">
+            <option value="all">Counted and not counted</option>
+            <option value="headline">Counted only</option>
+            <option value="excluded">Not counted only</option>
+          </select>
+        </label>
+        <button type="button" class="filter-clear" id="feed-clear" data-clear-filters>Clear filters</button>
+      </form>
+      <p class="feed-count" id="feed-count" role="status"></p>
       <div class="feed" id="feed"></div>
     </section>
 

@@ -2,6 +2,12 @@
 
 Canonical project control stays with AI Blockchain Ventures LLC / AI Modularity.
 
+## License and contribution terms
+
+No open-source license has been granted for this repository yet. The Apache-2.0 note in `IMPLEMENTATION_PROPOSAL.md` is a pending-counsel proposal, not the current license. Do not assume Apache-2.0 or any other OSI license until a `LICENSE` file is added.
+
+The CLA decision is also pending counsel. Until that is settled, contributors should only submit material they have the right to contribute and should expect maintainers to ask for explicit contribution terms before accepting substantial code, data, or documentation changes.
+
 ## Code
 
 1. Fork the canonical repository.
@@ -21,6 +27,8 @@ node tests/methodology-render.test.js
 node tests/provenance.test.js
 node tests/source-graph.test.js
 ```
+
+The same checks run automatically on every pull request, along with a check that the generated CSV and baseline match the JSON.
 
 If you changed a record, the suite fails until you run `node tests/update-expected.js` and include the resulting baseline diff — that diff is how a reviewer sees which published totals your change moved.
 

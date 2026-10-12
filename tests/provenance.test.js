@@ -340,7 +340,13 @@ function randomSources(next) {
 
 /* A record the headline branch of the validator does not inspect, so only provenance is under test. */
 const shell = dataset.incidents.find((r) => !E.isHeadlineEligible(r));
-const asDataset = (sources) => ({ ...dataset, incidents: [{ ...shell, sources }] });
+/* The record's grade must be the best grade among its sources, so the shell takes it from them. */
+const bestGrade = (sources) =>
+  ["PRIMARY", "INDEPENDENT_SECONDARY", "ROUNDUP"].find((grade) => sources.some((s) => s.evidence_grade === grade));
+const asDataset = (sources) => ({
+  ...dataset,
+  incidents: [{ ...shell, verification_status: "REPORTED", evidence_grade: bestGrade(sources), sources }]
+});
 
 const SEEDS = Array.from({ length: 500 }, (_, i) => i + 1);
 const CASES = SEEDS.map((seed) => ({ seed, sources: randomSources(makeRandom(seed)) }));

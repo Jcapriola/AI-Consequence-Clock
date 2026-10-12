@@ -13,6 +13,7 @@ var fs = require("fs");
 var path = require("path");
 var V = require(path.join(__dirname, "validate-records.js"));
 var E = require(path.join(__dirname, "..", "js", "evidence.js"));
+var S = require(path.join(__dirname, "schema.js"));
 
 var dataset = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "incidents.json"), "utf8"));
 
@@ -43,6 +44,47 @@ console.log("Validator: live file");
 var live = V.validateDataset(dataset);
 ok("seed file has no field problems", live.problems.length === 0);
 ok("seed file has records", live.recordCount === dataset.incidents.length);
+
+console.log("\nValidator: methodology vocabulary stays in sync");
+var methodology = fs.readFileSync(path.join(__dirname, "..", "methodology.html"), "utf8");
+var direction = fs.readFileSync(path.join(__dirname, "..", "METHODOLOGY_DIRECTION.md"), "utf8");
+function enumList(name, sep) {
+  return S.ENUMS[name].join(sep || " / ");
+}
+function methodologyEnum(name) {
+  var match = methodology.match(new RegExp('data-enum="' + name + '">([^<]+)</code>'));
+  return match && match[1];
+}
+[
+  "verification_status",
+  "evidence_grade",
+  "causal_role",
+  "adversary",
+  "authorization_evidence",
+  "unauthorized_claim",
+  "reversibility",
+  "consequence_class"
+].forEach(function (name) {
+  ok("methodology.html enum " + name + " matches schema.js", methodologyEnum(name) === enumList(name));
+});
+ok("METHODOLOGY_DIRECTION status vocabulary matches schema.js", direction.indexOf("Status: " + enumList("verification_status")) !== -1);
+ok("METHODOLOGY_DIRECTION grade vocabulary matches schema.js", direction.indexOf("Grade: " + enumList("evidence_grade")) !== -1);
+ok(
+  "METHODOLOGY_DIRECTION authorization vocabulary matches schema.js",
+  direction.indexOf("`" + enumList("authorization_evidence", " | ") + "`") !== -1
+);
+ok(
+  "METHODOLOGY_DIRECTION causal_role vocabulary matches schema.js",
+  direction.indexOf("causal_role: `" + enumList("causal_role", " | ") + "`") !== -1
+);
+ok(
+  "METHODOLOGY_DIRECTION adversary vocabulary matches schema.js",
+  direction.indexOf("adversary: `" + enumList("adversary", " | ") + "`") !== -1
+);
+ok(
+  "METHODOLOGY_DIRECTION consequence vocabulary matches schema.js",
+  direction.indexOf("consequence_class: `" + enumList("consequence_class", " | ") + "`") !== -1
+);
 
 console.log("\nValidator: silent headline drop");
 var lower = clone();
@@ -103,6 +145,114 @@ ok(
   })
 );
 
+/*
+ * "Grade is assigned from the sources listed on the record." Each mutation below
+ * computes perfectly, so only the validator can say the grade is not what the file holds.
+ */
+function hasSourceGraded(record, grade) {
+  return (record.sources || []).some(function (s) {
+    return s.evidence_grade === grade;
+  });
+}
+
+console.log("\nValidator: grade above the attached sources");
+var inflated = clone();
+var secondary = firstWhere(function (r) {
+  return E.isHeadlineEligible(r) && !hasSourceGraded(r, "PRIMARY");
+});
+var inflatedRecord = inflated.incidents.find(function (r) {
+  return r.id === secondary.id;
+});
+inflatedRecord.evidence_grade = "PRIMARY";
+inflatedRecord.verification_status = "VERIFIED";
+inflatedRecord.primary_source_url = inflatedRecord.sources.find(function (s) {
+  return s.evidence_grade !== "PRIMARY";
+}).url;
+var inflatedResult = V.validateDataset(inflated);
+ok(
+  "PRIMARY grade with no PRIMARY source attached fails validation by id",
+  inflatedResult.problems.some(function (p) {
+    return p.indexOf(secondary.id) !== -1 && p.indexOf("best attached source") !== -1;
+  })
+);
+
+console.log("\nValidator: grade below the attached sources");
+var under = clone();
+var underRecord = under.incidents.find(function (r) {
+  return r.id === primary.id;
+});
+underRecord.evidence_grade = "INDEPENDENT_SECONDARY";
+ok(
+  "under-grading stays headline-eligible, so arithmetic would not notice",
+  E.isHeadlineEligible(underRecord)
+);
+var underResult = V.validateDataset(under);
+ok(
+  "INDEPENDENT_SECONDARY grade over an attached PRIMARY source fails validation by id",
+  underResult.problems.some(function (p) {
+    return p.indexOf(primary.id) !== -1 && p.indexOf("best attached source is PRIMARY") !== -1;
+  })
+);
+
+console.log("\nValidator: PRIMARY citation pointing at a weaker source");
+var miscited = clone();
+var mixed = firstWhere(function (r) {
+  return (
+    r.evidence_grade === "PRIMARY" &&
+    E.isHeadlineEligible(r) &&
+    hasSourceGraded(r, "PRIMARY") &&
+    (r.sources || []).some(function (s) {
+      return s.evidence_grade !== "PRIMARY";
+    })
+  );
+});
+var miscitedRecord = miscited.incidents.find(function (r) {
+  return r.id === mixed.id;
+});
+miscitedRecord.primary_source_url = miscitedRecord.sources.find(function (s) {
+  return s.evidence_grade !== "PRIMARY";
+}).url;
+var miscitedResult = V.validateDataset(miscited);
+ok(
+  "PRIMARY record citing an attached non-PRIMARY source fails validation by id",
+  miscitedResult.problems.some(function (p) {
+    return p.indexOf(mixed.id) !== -1 && /primary_source_url points at a \w+ source/.test(p);
+  })
+);
+
+console.log("\nValidator: disclosure after the last review");
+var future = clone();
+var futureRecord = future.incidents[0];
+futureRecord.disclosure_date = "2030-01-01";
+var futureResult = V.validateDataset(future);
+ok(
+  "a disclosure_date after last_evidence_review fails validation by id",
+  futureResult.problems.some(function (p) {
+    return p.indexOf(futureRecord.id) !== -1 && p.indexOf("last_evidence_review") !== -1;
+  })
+);
+ok(
+  "the day counter would clamp that record to 0 instead of reporting it",
+  E.daysSinceLatestDisclosure(future.incidents, future.last_evidence_review).days === 0
+);
+
+console.log("\nValidator: revision bumped without a change_log entry");
+var silent = clone();
+var revised = firstWhere(function (r) {
+  return r.revision > 1 && Array.isArray(r.change_log) && r.change_log.length > 0;
+});
+var silentRecord = silent.incidents.find(function (r) {
+  return r.id === revised.id;
+});
+silentRecord.revision = revised.revision + 1;
+var silentResult = V.validateDataset(silent);
+ok(
+  "a revision with no matching change_log entry fails validation by id",
+  silentResult.problems.some(function (p) {
+    return p.indexOf(revised.id) !== -1 && p.indexOf("change_log") !== -1;
+  })
+);
+
 console.log("\nValidator: geography");
 var geo = clone();
 geo.incidents.forEach(function (r) {
@@ -142,18 +292,6 @@ function any() {
   return true;
 }
 
-rejects(
-  "a record graded above its best source fails",
-  mutated(
-    function (r) {
-      return r.evidence_grade === "ROUNDUP";
-    },
-    function (r) {
-      r.evidence_grade = "PRIMARY";
-    }
-  ),
-  /exceeds the best grade on any attached source/
-);
 rejects(
   "CORROBORATED on a feed-only record still needs two qualifying publishers",
   mutated(
@@ -212,25 +350,6 @@ rejects(
   /rolled_back is false but reversibility is "rolled_back"/
 );
 rejects(
-  "primary_source_url pointing at a non-PRIMARY source fails",
-  mutated(
-    function (r) {
-      return (
-        !!r.primary_source_url &&
-        r.sources.some(function (s) {
-          return s.evidence_grade !== "PRIMARY";
-        })
-      );
-    },
-    function (r) {
-      r.primary_source_url = r.sources.find(function (s) {
-        return s.evidence_grade !== "PRIMARY";
-      }).url;
-    }
-  ),
-  /primary_source_url points at a source that is not graded PRIMARY/
-);
-rejects(
   "primary_source_url on a feed-only record must still be attached",
   mutated(
     function (r) {
@@ -241,15 +360,6 @@ rejects(
     }
   ),
   /primary_source_url is not among the attached sources/
-);
-rejects(
-  "a record graded while none of its sources carries a valid grade fails",
-  mutated(any, function (r) {
-    r.sources.forEach(function (s) {
-      s.evidence_grade = "primary";
-    });
-  }),
-  /exceeds the best grade on any attached source, none/
 );
 rejects(
   "a security_research_roundup graded above ROUNDUP fails",

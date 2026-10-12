@@ -15,7 +15,7 @@
 | Canonical store | Postgres via Neon or Supabase | Versioned rows, audit table, free tier enough for MVP. |
 | Admin review | Separate authenticated route, not in the public bundle | Spec requires human approval for VERIFIED in MVP. |
 | Discovery jobs | GitHub Actions on a schedule, pluggable fetchers | No single AI-vendor dependency. |
-| License | Apache-2.0 pending counsel | Permissive reuse; brand/data stay with ABV. |
+| License | Not granted yet; Apache-2.0 candidate pending counsel | Do not assume reuse rights until a `LICENSE` file exists; brand/data stay with ABV. |
 
 This preview already derives every on-page number from `data/incidents.json`. No production counter is typed into the frontend.
 
@@ -55,7 +55,7 @@ Future cost only appears with paid search APIs, high Worker volume, or a dedicat
 - Create `AI-Blockchain-Ventures/ai-consequence-clock` (or org-equivalent) as the only canonical repo.
 - Production deploy tokens live in ABV-controlled Cloudflare/GitHub orgs.
 - Contributors fork + PR. No production credentials by default.
-- Trademark, domain, official dataset, and governance stay with ABV even if the code is Apache-2.0.
+- Trademark, domain, official dataset, and governance stay with ABV even if the code later becomes Apache-2.0.
 - Brand assets and the official seed-to-production dataset are not implied to be relicensed by a code contribution.
 
 ## Assumptions and requested spec changes
