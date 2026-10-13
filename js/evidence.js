@@ -499,6 +499,432 @@
     return VULNERABILITY_DEFINITIONS[category] || null;
   }
 
+  /*
+   * The headline rule is one defensible choice among several. Each rule set below contains
+   * every record the previous one does, so the table shows how far the published total moves
+   * when the rule moves. R3 reads the published constants, so it cannot drift from them.
+   */
+  var RULE_SETS = [
+    {
+      id: "R1",
+      label: "Strictest",
+      rationale: "Two sources agree, and the official record itself is attached.",
+      statuses: ["CORROBORATED"],
+      grades: ["PRIMARY"]
+    },
+    {
+      id: "R2",
+      label: "Strict",
+      rationale: "Checked by a reviewer, and the official record itself is attached.",
+      statuses: ["VERIFIED", "CORROBORATED"],
+      grades: ["PRIMARY"]
+    },
+    {
+      id: "R3",
+      label: "Standard",
+      rationale: "Checked by a reviewer, with the official record or an independent news report attached.",
+      published: true,
+      statuses: HEADLINE_STATUSES.slice(),
+      grades: HEADLINE_GRADES.slice()
+    },
+    {
+      id: "R4",
+      label: "Including records under review",
+      rationale: "The published rule, plus records a reviewer has not finished checking.",
+      statuses: ["VERIFIED", "CORROBORATED", "UNDER_REVIEW"],
+      grades: ["PRIMARY", "INDEPENDENT_SECONDARY"]
+    },
+    {
+      id: "R5",
+      label: "Everything not disputed or retracted",
+      rationale: "Adds reports nobody has verified, and records backed only by a roundup article.",
+      statuses: ["REPORTED", "UNDER_REVIEW", "VERIFIED", "CORROBORATED"],
+      grades: ["ROUNDUP", "INDEPENDENT_SECONDARY", "PRIMARY"]
+    },
+    {
+      id: "R6",
+      label: "Every record in the file",
+      rationale: "No filter at all, including disputed and retracted records.",
+      statuses: ["REPORTED", "UNDER_REVIEW", "VERIFIED", "CORROBORATED", "DISPUTED", "RETRACTED"],
+      grades: ["ROUNDUP", "INDEPENDENT_SECONDARY", "PRIMARY"]
+    }
+  ];
+
+  /* One row per rule set. Documented and demonstrated stay in separate columns. */
+  function sensitivityTable(records) {
+    return RULE_SETS.map(function (ruleSet) {
+      var picked = (records || []).filter(function (record) {
+        return has(ruleSet.statuses, record.verification_status) && has(ruleSet.grades, record.evidence_grade);
+      });
+      var documented = picked.filter(function (record) {
+        return occurrence(record) === "documented";
+      }).length;
+      return {
+        id: ruleSet.id,
+        label: ruleSet.label,
+        rationale: ruleSet.rationale,
+        published: !!ruleSet.published,
+        total: picked.length,
+        documented: documented,
+        demonstrated: picked.length - documented,
+        ids: picked.map(function (record) { return record.id; }).sort()
+      };
+    });
+  }
+
+  /*
+   * Source provenance. Two publishers restating one advisory are one root of evidence.
+   * The headline rule counts publisher names. This counts roots and changes no published
+   * number. Nothing is inferred: a source with no annotation is UNKNOWN.
+   */
+  var PROVENANCE_KINDS = ["ORIGINAL", "DERIVED", "UNKNOWN"];
+  var EXTERNAL_ROOT_PREFIXES = ["cve", "vendor", "paper", "researcher", "regulator", "other"];
+  var EXTERNAL_ROOT_KEY = new RegExp("^(" + EXTERNAL_ROOT_PREFIXES.join("|") + "):[a-z0-9][a-z0-9.-]*$", "i");
+  var SOURCE_ID = /^[a-z0-9][a-z0-9-]*$/;
+  var VERDICT_DEFINITIONS = [
+    {
+      id: "INDEPENDENT_CONFIRMED",
+      label: "Independently confirmed",
+      text: "Two or more separate pieces of evidence, and every source behind them has its origin recorded."
+    },
+    {
+      id: "SINGLE_ROOT",
+      label: "One piece of evidence",
+      text: "The sources lead back to one piece of evidence, and every source behind it has its origin recorded."
+    },
+    {
+      id: "INDETERMINATE",
+      label: "Not known yet",
+      text: "At least one source has no origin recorded, so no conclusion is drawn."
+    },
+    {
+      id: "NO_QUALIFYING_SOURCES",
+      label: "No qualifying source",
+      text: "No attached source is strong enough to count."
+    }
+  ];
+  var PROVENANCE_VERDICTS = VERDICT_DEFINITIONS.map(function (definition) {
+    return definition.id;
+  });
+
+  function verdictDefinition(verdict) {
+    return VERDICT_DEFINITIONS[PROVENANCE_VERDICTS.indexOf(verdict)] || null;
+  }
+
+  function normalizePublisher(value) {
+    return String(value === null || value === undefined ? "" : value)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  function urlHost(value) {
+    var match = /^[a-z][a-z0-9+.-]*:\/\/([^\/?#]*)/i.exec(String(value || "").trim());
+    if (!match) return "";
+    return match[1]
+      .replace(/^.*@/, "")
+      .replace(/:\d*$/, "")
+      .toLowerCase()
+      .replace(/^www\./, "");
+  }
+
+  function provenanceKind(source) {
+    var kind = source && source.provenance && source.provenance.kind;
+    return has(PROVENANCE_KINDS, kind) ? kind : "UNKNOWN";
+  }
+
+  function stringList(value) {
+    if (!Array.isArray(value)) return [];
+    return value.filter(function (item) {
+      return typeof item === "string" && item.length > 0;
+    });
+  }
+
+  function distinct(values) {
+    return values.filter(function (value, index) {
+      return values.indexOf(value) === index;
+    });
+  }
+
+  function compareStrings(a, b) {
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+
+  function isQualifyingSource(source) {
+    return has(HEADLINE_GRADES, source.evidence_grade);
+  }
+
+  /* Only a DERIVED source names what it rests on. */
+  function derivedFrom(source, field) {
+    if (provenanceKind(source) !== "DERIVED") return [];
+    return stringList(source.provenance[field]);
+  }
+
+  /* External keys match without regard to case. */
+  function externalRootsOf(source) {
+    return derivedFrom(source, "derives_from_external").map(function (key) {
+      return key.toLowerCase();
+    });
+  }
+
+  /* What one source declares, as the derivation reads it. For drawing, never for counting. */
+  function sourceLinks(source) {
+    return {
+      kind: provenanceKind(source),
+      qualifying: !!source && isQualifyingSource(source),
+      internal: derivedFrom(source, "derives_from_internal"),
+      external: externalRootsOf(source)
+    };
+  }
+
+  /*
+   * True when a source's origin cannot be followed: it is UNKNOWN, it is DERIVED from
+   * nothing that can be found, or its annotation contradicts itself. The page does not
+   * run the validator, so a malformed annotation must not read as a traced one.
+   */
+  function isUntraced(source, attachedIds) {
+    var kind = provenanceKind(source);
+    var declared = source.provenance || {};
+    var internal = stringList(declared.derives_from_internal);
+    var external = stringList(declared.derives_from_external);
+    if (kind === "UNKNOWN") return true;
+    if (kind === "ORIGINAL") return internal.length + external.length > 0;
+    var unresolved = internal.some(function (ref) {
+      return !has(attachedIds, ref);
+    });
+    return unresolved || internal.length + external.length === 0;
+  }
+
+  function sourceNodes(record) {
+    var sources = (Array.isArray(record && record.sources) ? record.sources : []).filter(function (source) {
+      return !!source && typeof source === "object";
+    });
+    var attachedIds = sources
+      .map(function (source) {
+        return source.id;
+      })
+      .filter(function (id) {
+        return typeof id === "string";
+      });
+    return sources
+      .map(function (source) {
+        var id = typeof source.id === "string" ? source.id : "";
+        var label = id || String(source.url || "");
+        var publisher = normalizePublisher(source.publisher);
+        return {
+          source: source,
+          id: id,
+          label: label,
+          publisher: publisher,
+          qualifying: isQualifyingSource(source),
+          original: provenanceKind(source) === "ORIGINAL",
+          untraced: isUntraced(source, attachedIds),
+          sortKey: [label, publisher, String(source.evidence_grade)].join("\n")
+        };
+      })
+      // Sorted so the output does not depend on source order.
+      .sort(function (a, b) {
+        return compareStrings(a.sortKey, b.sortKey);
+      });
+  }
+
+  /* Two sources sharing any of these keys belong to the same root. */
+  function linkKeys(node) {
+    var keys = [];
+    var host = urlHost(node.source.url);
+    if (node.publisher) keys.push("publisher:" + node.publisher);
+    if (host) keys.push("host:" + host);
+    if (node.id) keys.push("id:" + node.id);
+    derivedFrom(node.source, "derives_from_internal").forEach(function (ref) {
+      keys.push("id:" + ref);
+    });
+    externalRootsOf(node.source).forEach(function (key) {
+      keys.push("external:" + key);
+    });
+    return keys;
+  }
+
+  function adjacency(nodes) {
+    var holders = Object.create(null);
+    var adjacent = nodes.map(function () {
+      return [];
+    });
+    nodes.forEach(function (node, index) {
+      linkKeys(node).forEach(function (key) {
+        var previous = holders[key];
+        if (previous !== undefined) {
+          adjacent[previous].push(index);
+          adjacent[index].push(previous);
+        }
+        holders[key] = index;
+      });
+    });
+    return adjacent;
+  }
+
+  function componentFrom(start, adjacent, seen) {
+    var queue = [start];
+    var reached = [];
+    seen[start] = true;
+    while (queue.length) {
+      var current = queue.shift();
+      reached.push(current);
+      adjacent[current].forEach(function (next) {
+        if (seen[next]) return;
+        seen[next] = true;
+        queue.push(next);
+      });
+    }
+    return reached.sort(function (a, b) {
+      return a - b;
+    });
+  }
+
+  function connectedComponents(nodes) {
+    var adjacent = adjacency(nodes);
+    var seen = [];
+    var components = [];
+    nodes.forEach(function (unused, start) {
+      if (seen[start]) return;
+      components.push(
+        componentFrom(start, adjacent, seen).map(function (index) {
+          return nodes[index];
+        })
+      );
+    });
+    return components;
+  }
+
+  function isOriginal(node) {
+    return node.original;
+  }
+
+  function holdsQualifying(members) {
+    return members.some(function (node) {
+      return node.qualifying;
+    });
+  }
+
+  function describeComponent(members) {
+    var roots = [];
+    members.forEach(function (node) {
+      roots = roots.concat(externalRootsOf(node.source));
+    });
+    return {
+      sources: members.map(function (node) {
+        return node.label;
+      }),
+      members: members.map(function (node) {
+        return node.source;
+      }),
+      external_roots: distinct(roots).sort(),
+      qualifying: holdsQualifying(members),
+      // One untraced member could restate any other. A loop of derivations has no origin at all.
+      untraced:
+        (!roots.length && !members.some(isOriginal)) ||
+        members.some(function (node) {
+          return node.untraced;
+        })
+    };
+  }
+
+  function provenanceVerdict(qualifyingCount, counted) {
+    if (qualifyingCount === 0) return "NO_QUALIFYING_SOURCES";
+    var untraced = counted.some(function (component) {
+      return component.untraced;
+    });
+    if (untraced) return "INDETERMINATE";
+    return counted.length >= 2 ? "INDEPENDENT_CONFIRMED" : "SINGLE_ROOT";
+  }
+
+  /* A publisher-less source cannot be shown to share a publisher, so each counts as its own. */
+  function countDistinctPublishers(qualifying) {
+    var named = qualifying
+      .map(function (node) {
+        return node.publisher;
+      })
+      .filter(Boolean);
+    return distinct(named).length + (qualifying.length - named.length);
+  }
+
+  /* The sources a reviewer must annotate before the record can leave INDETERMINATE. */
+  function collectPending(groups) {
+    var pending = [];
+    groups.filter(holdsQualifying).forEach(function (members) {
+      members.forEach(function (node) {
+        if (node.untraced) pending.push(node.source);
+      });
+    });
+    return pending;
+  }
+
+  /*
+   * Groups one record's sources into roots of evidence. Every source is a node, so a
+   * roundup can bridge two articles that drew on it, but only a component holding a
+   * qualifying source is counted.
+   */
+  function sourceRoots(record) {
+    var nodes = sourceNodes(record);
+    var groups = connectedComponents(nodes);
+    var components = groups.map(describeComponent);
+    var counted = components.filter(function (component) {
+      return component.qualifying;
+    });
+    var qualifying = nodes.filter(function (node) {
+      return node.qualifying;
+    });
+
+    return {
+      id: record && record.id !== undefined ? record.id : null,
+      verdict: provenanceVerdict(qualifying.length, counted),
+      component_count: counted.length,
+      distinct_publisher_count: countDistinctPublishers(qualifying),
+      qualifying_source_count: qualifying.length,
+      annotated_qualifying_count: qualifying.filter(function (node) {
+        return !node.untraced;
+      }).length,
+      missing_publisher_count: qualifying.filter(function (node) {
+        return node.publisher === "";
+      }).length,
+      pending_sources: collectPending(groups),
+      components: components
+    };
+  }
+
+  /*
+   * Shadow metric over the records the published rule counts. It never changes which
+   * records count: it says how many of them rest on more than one root of evidence.
+   */
+  function provenanceSummary(records) {
+    var counted = (records || []).filter(isHeadlineEligible);
+    var summary = {
+      total: counted.length,
+      verdicts: {},
+      ids: {},
+      qualifying_source_count: 0,
+      annotated_qualifying_count: 0,
+      pending_source_count: 0,
+      missing_publisher_count: 0
+    };
+    PROVENANCE_VERDICTS.forEach(function (verdict) {
+      summary.verdicts[verdict] = 0;
+      summary.ids[verdict] = [];
+    });
+    counted.forEach(function (record) {
+      var roots = sourceRoots(record);
+      summary.verdicts[roots.verdict] += 1;
+      summary.ids[roots.verdict].push(record.id);
+      summary.qualifying_source_count += roots.qualifying_source_count;
+      summary.annotated_qualifying_count += roots.annotated_qualifying_count;
+      summary.pending_source_count += roots.pending_sources.length;
+      summary.missing_publisher_count += roots.missing_publisher_count;
+    });
+    PROVENANCE_VERDICTS.forEach(function (verdict) {
+      summary.ids[verdict].sort();
+    });
+    return summary;
+  }
+
   // Feed filter criteria that compare one record field for exact equality.
   var FILTER_FIELDS = {
     status: "verification_status",
@@ -578,6 +1004,18 @@
     vulnerabilityDefinition: vulnerabilityDefinition,
     filterRecords: filterRecords,
     filterOptions: filterOptions,
-    derive: derive
+    derive: derive,
+    RULE_SETS: RULE_SETS,
+    sensitivityTable: sensitivityTable,
+    PROVENANCE_KINDS: PROVENANCE_KINDS,
+    PROVENANCE_VERDICTS: PROVENANCE_VERDICTS,
+    verdictDefinition: verdictDefinition,
+    EXTERNAL_ROOT_PREFIXES: EXTERNAL_ROOT_PREFIXES,
+    EXTERNAL_ROOT_KEY: EXTERNAL_ROOT_KEY,
+    SOURCE_ID: SOURCE_ID,
+    normalizePublisher: normalizePublisher,
+    sourceLinks: sourceLinks,
+    sourceRoots: sourceRoots,
+    provenanceSummary: provenanceSummary
   };
 });

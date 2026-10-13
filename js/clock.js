@@ -291,6 +291,7 @@
       '<p class="srclabel">Sources</p><ul class="cites">' +
       (sources || "<li>No sources attached.</li>") +
       "</ul>" +
+      (window.ClockSourceGraph ? window.ClockSourceGraph.section(record, true) : "") +
       (changes ? '<p class="srclabel">Revision history</p><ul class="changes">' + changes + "</ul>" : "") +
       "</article>"
     );

@@ -45,6 +45,202 @@ function nonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function attachedSources(record) {
+  return record.sources.filter(S.isPlainObject);
+}
+
+function qualifyingPublishers(sources) {
+  var seen = {};
+  sources.forEach(function (source) {
+    var publisher = E.normalizePublisher(source.publisher);
+    if (publisher && E.HEADLINE_GRADES.indexOf(source.evidence_grade) !== -1) seen[publisher] = true;
+  });
+  return Object.keys(seen);
+}
+
+/*
+ * The checks below compare fields that state one fact twice. A disagreement moves no
+ * total today, which is why nothing else would notice it.
+ */
+function checkDisclosureLag(record, id) {
+  var lag = record.disclosure_lag_days;
+  if (lag === undefined) {
+    fail(id, "disclosure_lag_days is required: a number of days, or null when the lag is not known");
+  } else if (lag !== null && (typeof lag !== "number" || !isFinite(lag))) {
+    fail(id, "disclosure_lag_days must be a number or null");
+  } else if (lag !== null && (record.incident_date === null || record.incident_date === undefined)) {
+    fail(id, "disclosure_lag_days must be null when incident_date is null");
+  }
+}
+
+function checkRollbackAgreement(record, id) {
+  if (typeof record.rolled_back !== "boolean") return;
+  if (record.rolled_back !== (record.reversibility === "rolled_back")) {
+    fail(id, "rolled_back is " + record.rolled_back + ' but reversibility is "' + record.reversibility + '"');
+  }
+}
+
+/* A roundup is a compilation of other reports, whatever grade it is given. */
+function checkRoundupGrades(record, id) {
+  record.sources.forEach(function (source, si) {
+    if (!S.isPlainObject(source)) return;
+    if (source.source_type === "security_research_roundup" && source.evidence_grade !== "ROUNDUP") {
+      fail(id, "sources[" + si + "] is a security_research_roundup and cannot be graded above ROUNDUP");
+    }
+  });
+}
+
+/* The headline branch checks counted records. A feed-only CORROBORATED makes the same claim. */
+function checkFeedOnlyCorroboration(record, id) {
+  if (record.verification_status !== "CORROBORATED" || E.isHeadlineEligible(record)) return;
+  if (qualifyingPublishers(attachedSources(record)).length < 2) {
+    fail(id, "is CORROBORATED but carries fewer than two independently published qualifying sources");
+  }
+}
+
+/* The headline branch reports this for counted records. A feed-only record makes the same claim. */
+function checkFeedOnlyPrimaryUrl(record, id) {
+  if (!nonEmptyString(record.primary_source_url) || E.isHeadlineEligible(record)) return;
+  var attached = attachedSources(record).some(function (source) {
+    return String(source.url).trim() === record.primary_source_url.trim();
+  });
+  if (!attached) fail(id, "primary_source_url is not among the attached sources");
+}
+
+/*
+ * Provenance is optional. A source that declares none is UNKNOWN and is not checked.
+ * One that declares it is making a claim, and a malformed claim would merge or split
+ * roots silently.
+ */
+function checkProvenance(record, id) {
+  var sourceIds = collectSourceIds(record, id);
+  var internalEdges = Object.create(null);
+  record.sources.forEach(function (source, si) {
+    if (!S.isPlainObject(source) || source.provenance === undefined) return;
+    var refs = checkDeclaration(source, "sources[" + si + "]", sourceIds, id);
+    if (typeof source.id === "string") internalEdges[source.id] = refs;
+  });
+  var unresolved = unresolvedDerivations(internalEdges);
+  if (unresolved.length) {
+    fail(id, "provenance has a derivation cycle; sources on it or cited from it: " + unresolved.join(", "));
+  }
+}
+
+function collectSourceIds(record, id) {
+  var sourceIds = Object.create(null);
+  record.sources.forEach(function (source, si) {
+    if (!S.isPlainObject(source) || source.id === undefined) return;
+    var where = "sources[" + si + "]";
+    if (typeof source.id !== "string" || !E.SOURCE_ID.test(source.id)) {
+      fail(id, where + ".id must be a lowercase slug of letters, digits and hyphens");
+    } else if (sourceIds[source.id]) {
+      fail(id, where + '.id "' + source.id + '" is a duplicate source id within the record');
+    } else {
+      sourceIds[source.id] = true;
+    }
+  });
+  return sourceIds;
+}
+
+function stringListOrFail(value, where, id) {
+  var isList =
+    Array.isArray(value) &&
+    value.every(function (item) {
+      return typeof item === "string";
+    });
+  if (!isList) fail(id, where + " must be an array of strings");
+  return isList ? value : [];
+}
+
+function checkDeclarationShape(source, sourceWhere, id) {
+  var where = sourceWhere + ".provenance";
+  var p = source.provenance;
+  if (!S.isPlainObject(p)) {
+    fail(id, where + " must be an object with kind, derives_from_internal, derives_from_external and optionally note");
+    return false;
+  }
+  if (source.id === undefined) {
+    fail(id, sourceWhere + ".id is required on a source that declares provenance");
+  }
+  if (E.PROVENANCE_KINDS.indexOf(p.kind) === -1) {
+    fail(id, where + '.kind has unknown value "' + p.kind + '". Allowed: ' + E.PROVENANCE_KINDS.join(", "));
+  }
+  if (p.note !== undefined && p.note !== null && typeof p.note !== "string") {
+    fail(id, where + ".note must be a string");
+  }
+  return true;
+}
+
+function checkReferenceCount(kind, count, where, id) {
+  if ((kind === "ORIGINAL" || kind === "UNKNOWN") && count > 0) {
+    fail(id, where + " is " + kind + " and must not list anything it derives from");
+  }
+  if (kind === "DERIVED" && count === 0) {
+    fail(id, where + " is DERIVED and must name at least one source or external root");
+  }
+}
+
+function checkExternalKeys(keys, where, id) {
+  keys.forEach(function (key) {
+    if (E.EXTERNAL_ROOT_KEY.test(key)) return;
+    fail(
+      id,
+      where + '.derives_from_external key "' + key + '" must look like <prefix>:<slug> with prefix in ' +
+        E.EXTERNAL_ROOT_PREFIXES.join(", ")
+    );
+  });
+}
+
+function resolvedInternalRefs(refs, source, sourceIds, where, id) {
+  var resolved = [];
+  refs.forEach(function (ref) {
+    if (ref === source.id) {
+      fail(id, where + ".derives_from_internal must not reference the source itself");
+    } else if (!sourceIds[ref]) {
+      fail(id, where + '.derives_from_internal names "' + ref + '", which is not a source id on this record');
+    } else {
+      resolved.push(ref);
+    }
+  });
+  return resolved;
+}
+
+/* Checks one declared provenance and returns the internal references that resolve. */
+function checkDeclaration(source, sourceWhere, sourceIds, id) {
+  if (!checkDeclarationShape(source, sourceWhere, id)) return [];
+  var where = sourceWhere + ".provenance";
+  var p = source.provenance;
+  var internal = stringListOrFail(p.derives_from_internal, where + ".derives_from_internal", id);
+  var external = stringListOrFail(p.derives_from_external, where + ".derives_from_external", id);
+  checkReferenceCount(p.kind, internal.length + external.length, where, id);
+  checkExternalKeys(external, where, id);
+  return resolvedInternalRefs(internal, source, sourceIds, where, id);
+}
+
+/* Kahn's algorithm. What cannot be ordered is on a derivation loop or cited from one. */
+function unresolvedDerivations(edges) {
+  var nodes = Object.keys(edges).sort();
+  var indegree = Object.create(null);
+  nodes.forEach(function (from) {
+    edges[from].forEach(function (to) {
+      if (edges[to]) indegree[to] = (indegree[to] || 0) + 1;
+    });
+  });
+  var ready = nodes.filter(function (node) {
+    return !indegree[node];
+  });
+  while (ready.length) {
+    edges[ready.shift()].forEach(function (to) {
+      if (!edges[to]) return;
+      indegree[to] -= 1;
+      if (indegree[to] === 0) ready.push(to);
+    });
+  }
+  return nodes.filter(function (node) {
+    return indegree[node] > 0;
+  });
+}
+
 var seenIds = Object.create(null);
 
 records.forEach(function (record, index) {
@@ -215,6 +411,16 @@ records.forEach(function (record, index) {
     checked++;
   }
 
+  checkDisclosureLag(record, id);
+  checkRollbackAgreement(record, id);
+  if (Array.isArray(record.sources)) {
+    checkRoundupGrades(record, id);
+    checkFeedOnlyCorroboration(record, id);
+    checkFeedOnlyPrimaryUrl(record, id);
+    checkProvenance(record, id);
+  }
+  checked += 6;
+
   /*
    * The headline rule must be backed by the file. A record claiming a qualifying grade
    * needs a source that actually carries it, otherwise a published total asserts
@@ -233,11 +439,7 @@ records.forEach(function (record, index) {
       );
     }
     if (record.verification_status === "CORROBORATED") {
-      var independent = {};
-      qualifying.forEach(function (s) {
-        independent[String(s.publisher).trim().toLowerCase()] = true;
-      });
-      if (Object.keys(independent).length < 2) {
+      if (qualifyingPublishers(qualifying).length < 2) {
         fail(
           id,
           "is CORROBORATED but carries fewer than two independently published qualifying sources"

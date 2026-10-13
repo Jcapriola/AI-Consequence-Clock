@@ -19,6 +19,14 @@ jobs:
         run: node tests/validate.test.js
       - name: Derived totals
         run: node tests/derive.test.js
+      - name: Sensitivity table
+        run: node tests/sensitivity.test.js
+      - name: Methodology page rendering
+        run: node tests/methodology-render.test.js
+      - name: Source provenance
+        run: node tests/provenance.test.js
+      - name: Source graph rendering
+        run: node tests/source-graph.test.js
 
       # Generated files must match the JSON they come from. update-expected.js
       # stamps today's date into "reviewed", and export-csv.js writes CRLF, so

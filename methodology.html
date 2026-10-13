@@ -67,6 +67,23 @@
       ROUNDUP records remain visible in the feed.
     </p>
 
+    <h2>How much the count depends on the rule</h2>
+    <p>
+      The number of records the clock counts comes from the headline rule above. A
+      stricter or a looser rule would give a different number from the same records.
+      The table below shows the count under six rules, from the strictest to no filter
+      at all, so you can see how much the published figure depends on which rule is
+      used. The highlighted row is the rule the clock uses today. This table does not
+      change it.
+    </p>
+    <p>
+      Each row has two separate counts: records where something happened, and records
+      where something was only shown to be possible. They are never added together,
+      because that would suggest more real events than the sources describe. Hover or
+      focus the question mark beside a rule to read what it admits.
+    </p>
+    <div class="card" id="sensitivity"></div>
+
     <h2>Differentiating fields</h2>
     <ul>
       <li><strong>causal_role</strong> — <code data-enum="causal_role">agent_initiated / agent_executed / human_used_ai / unknown</code>. Agent-caused counts use this field only.</li>
@@ -235,5 +252,7 @@
     </p>
     <p><a href="./index.html">Return to the clock</a></p>
   </div>
+  <script src="./js/evidence.js"></script>
+  <script src="./js/methodology.js"></script>
 </body>
 </html>

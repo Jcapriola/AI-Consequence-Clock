@@ -142,5 +142,115 @@
         "excluded": 4
       }
     }
-  }
+  },
+  "sensitivity": [
+    {
+      "id": "R1",
+      "total": 0,
+      "documented": 0,
+      "demonstrated": 0,
+      "ids": []
+    },
+    {
+      "id": "R2",
+      "total": 9,
+      "documented": 2,
+      "demonstrated": 7,
+      "ids": [
+        "acc-2024-02-14-air-canada",
+        "acc-2024-10-29-langchain-graphcypherqachain-injection",
+        "acc-2025-06-06-al-haroun-fabricated-authorities",
+        "acc-2025-06-camoleak",
+        "acc-2026-01-13-enclave-vm-sandbox-escape",
+        "acc-2026-01-14-cursor-agent-allowlist-bypass",
+        "acc-2026-03-safe-command-cve",
+        "acc-2026-04-09-praisonai-command-injection",
+        "acc-2026-07-15-mcp-python-sdk-task-authorization"
+      ]
+    },
+    {
+      "id": "R3",
+      "total": 10,
+      "documented": 3,
+      "demonstrated": 7,
+      "ids": [
+        "acc-2024-02-14-air-canada",
+        "acc-2024-10-29-langchain-graphcypherqachain-injection",
+        "acc-2025-06-06-al-haroun-fabricated-authorities",
+        "acc-2025-06-camoleak",
+        "acc-2025-07-18-replit-saastr",
+        "acc-2026-01-13-enclave-vm-sandbox-escape",
+        "acc-2026-01-14-cursor-agent-allowlist-bypass",
+        "acc-2026-03-safe-command-cve",
+        "acc-2026-04-09-praisonai-command-injection",
+        "acc-2026-07-15-mcp-python-sdk-task-authorization"
+      ]
+    },
+    {
+      "id": "R4",
+      "total": 10,
+      "documented": 3,
+      "demonstrated": 7,
+      "ids": [
+        "acc-2024-02-14-air-canada",
+        "acc-2024-10-29-langchain-graphcypherqachain-injection",
+        "acc-2025-06-06-al-haroun-fabricated-authorities",
+        "acc-2025-06-camoleak",
+        "acc-2025-07-18-replit-saastr",
+        "acc-2026-01-13-enclave-vm-sandbox-escape",
+        "acc-2026-01-14-cursor-agent-allowlist-bypass",
+        "acc-2026-03-safe-command-cve",
+        "acc-2026-04-09-praisonai-command-injection",
+        "acc-2026-07-15-mcp-python-sdk-task-authorization"
+      ]
+    },
+    {
+      "id": "R5",
+      "total": 16,
+      "documented": 8,
+      "demonstrated": 8,
+      "ids": [
+        "acc-2023-04-samsung-chatgpt",
+        "acc-2023-12-17-chevy-watsonville",
+        "acc-2024-02-14-air-canada",
+        "acc-2024-10-29-langchain-graphcypherqachain-injection",
+        "acc-2025-06-06-al-haroun-fabricated-authorities",
+        "acc-2025-06-camoleak",
+        "acc-2025-07-18-replit-saastr",
+        "acc-2026-01-13-enclave-vm-sandbox-escape",
+        "acc-2026-01-14-cursor-agent-allowlist-bypass",
+        "acc-2026-02-moltbook-supabase",
+        "acc-2026-03-safe-command-cve",
+        "acc-2026-04-09-praisonai-command-injection",
+        "acc-2026-04-pocketos",
+        "acc-2026-06-openai-aihw",
+        "acc-2026-07-15-mcp-python-sdk-task-authorization",
+        "acc-2026-09-manus"
+      ]
+    },
+    {
+      "id": "R6",
+      "total": 16,
+      "documented": 8,
+      "demonstrated": 8,
+      "ids": [
+        "acc-2023-04-samsung-chatgpt",
+        "acc-2023-12-17-chevy-watsonville",
+        "acc-2024-02-14-air-canada",
+        "acc-2024-10-29-langchain-graphcypherqachain-injection",
+        "acc-2025-06-06-al-haroun-fabricated-authorities",
+        "acc-2025-06-camoleak",
+        "acc-2025-07-18-replit-saastr",
+        "acc-2026-01-13-enclave-vm-sandbox-escape",
+        "acc-2026-01-14-cursor-agent-allowlist-bypass",
+        "acc-2026-02-moltbook-supabase",
+        "acc-2026-03-safe-command-cve",
+        "acc-2026-04-09-praisonai-command-injection",
+        "acc-2026-04-pocketos",
+        "acc-2026-06-openai-aihw",
+        "acc-2026-07-15-mcp-python-sdk-task-authorization",
+        "acc-2026-09-manus"
+      ]
+    }
+  ]
 }

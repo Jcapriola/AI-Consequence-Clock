@@ -57,7 +57,14 @@ const expected = {
   axes: Object.keys(summary.axes).reduce((acc, name) => {
     acc[name] = axisMap(name);
     return acc;
-  }, {})
+  }, {}),
+  sensitivity: E.sensitivityTable(dataset.incidents).map((r) => ({
+    id: r.id,
+    total: r.total,
+    documented: r.documented,
+    demonstrated: r.demonstrated,
+    ids: r.ids
+  }))
 };
 
 const published = {
