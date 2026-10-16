@@ -160,6 +160,73 @@ const FIXTURES = [
       source("enrichment", "Example Vuln Database", "https://vulndb.example/rest/1", "PRIMARY", derived(["cve"], []))
     ],
     want: { verdict: "SINGLE_ROOT", component_count: 1, distinct_publisher_count: 2 }
+  },
+  {
+    name: "two reports cited by one roundup stay two roots",
+    sources: [
+      source("tribunal", "Example Tribunal", "https://tribunal.example/decision/1", "PRIMARY", ORIGINAL()),
+      source("regulator", "Example Regulator", "https://regulator.example/7", "PRIMARY", ORIGINAL()),
+      source(
+        "roundup",
+        "Example Roundup",
+        "https://roundup.example/list",
+        "ROUNDUP",
+        derived(["tribunal", "regulator"], [])
+      )
+    ],
+    want: { verdict: "INDEPENDENT_CONFIRMED", component_count: 2, distinct_publisher_count: 2 }
+  },
+  {
+    name: "two articles copying one roundup are one root",
+    sources: [
+      source("daily", "Example Daily", "https://daily.example/a", SECONDARY, derived(["roundup"], [])),
+      source("weekly", "Example Weekly", "https://weekly.example/b", SECONDARY, derived(["roundup"], [])),
+      source("roundup", "Example Roundup", "https://roundup.example/list", "ROUNDUP", ORIGINAL())
+    ],
+    want: { verdict: "SINGLE_ROOT", component_count: 1, distinct_publisher_count: 2 }
+  },
+  {
+    name: "two outside origins joined only by a roundup stay two",
+    sources: [
+      source("daily", "Example Daily", "https://daily.example/a", SECONDARY, derived([], ["cve:x"])),
+      source("weekly", "Example Weekly", "https://weekly.example/b", SECONDARY, derived([], ["cve:y"])),
+      source(
+        "roundup",
+        "Example Roundup",
+        "https://roundup.example/list",
+        "ROUNDUP",
+        derived([], ["cve:x", "cve:y"])
+      )
+    ],
+    want: { verdict: "INDEPENDENT_CONFIRMED", component_count: 2, distinct_publisher_count: 2 }
+  },
+  {
+    name: "two citers from one aggregator do not join the reports they cite",
+    sources: [
+      source("tribunal", "Example Tribunal", "https://tribunal.example/decision/1", "PRIMARY", ORIGINAL()),
+      source("regulator", "Example Regulator", "https://regulator.example/7", "PRIMARY", ORIGINAL()),
+      source("list-a", "Example Aggregator", "https://agg-a.example/1", "ROUNDUP", derived(["tribunal"], [])),
+      source("list-b", "Example Aggregator", "https://agg-b.example/2", "ROUNDUP", derived(["regulator"], []))
+    ],
+    want: { verdict: "INDEPENDENT_CONFIRMED", component_count: 2, distinct_publisher_count: 2 }
+  },
+  {
+    name: "a copy of a roundup from the same outlet as a report is one root with it",
+    sources: [
+      source("report", "Example Wire", "https://wire.example/report", "PRIMARY", ORIGINAL()),
+      source("digest", "Example Wire", "https://digest.example/list", "ROUNDUP", ORIGINAL()),
+      source("daily", "Example Daily", "https://daily.example/a", "PRIMARY", derived(["digest"], []))
+    ],
+    want: { verdict: "SINGLE_ROOT", component_count: 1, distinct_publisher_count: 2 }
+  },
+  {
+    name: "two copies of an unannotated roundup are one root, not yet known",
+    sources: [
+      source("daily", "Example Daily", "https://daily.example/a", SECONDARY, derived(["roundup"], [])),
+      source("weekly", "Example Weekly", "https://weekly.example/b", SECONDARY, derived(["roundup"], [])),
+      source("roundup", "Example Roundup", "https://roundup.example/list", "ROUNDUP", null)
+    ],
+    want: { verdict: "INDETERMINATE", component_count: 1, distinct_publisher_count: 2 }
   }
 ];
 
@@ -454,6 +521,84 @@ check(
   E.provenanceSummary([{ id: "x", verification_status: "VERIFIED", evidence_grade: "PRIMARY", sources: nameless }])
     .missing_publisher_count,
   2
+);
+
+/*
+ * A source that only cites others, is not evidence and shares no outlet is a reader of
+ * the evidence, not part of it. Adding one must change nothing.
+ */
+const citer = (sources, seed) => {
+  const picks = sources.filter((s, i) => (seed + i) % 2 === 0).map((s) => s.id);
+  return source("citer", "Unrelated Roundup", "https://unrelated-roundup.example/list", "ROUNDUP", derived(picks, []));
+};
+holds("adding a source that only cites others changes neither the verdict nor the count", (sources, seed) => {
+  if (sources.length < 2) return true;
+  const before = rootsOf(sources);
+  const after = rootsOf(sources.concat([citer(sources, seed)]));
+  return before.verdict === after.verdict && before.component_count === after.component_count;
+});
+
+/* ---------------------------------------------------------------- scale */
+
+console.log("\nScale");
+/* One record with n sources: shared publishers and hosts, derivation chains and outside roots. */
+function wideRecord(n) {
+  const sources = [];
+  for (let i = 0; i < n; i++) {
+    const kind = i % 5;
+    const provenance =
+      kind === 0 ? ORIGINAL() : kind === 4 ? derived([], ["cve:k" + (i % 40)]) : derived(["w" + (i - 1 - (i % 3))], []);
+    sources.push(
+      source("w" + i, "Publisher " + (i % 97), "https://h" + (i % 89) + ".example/" + i, GRADES[i % 3], provenance)
+    );
+  }
+  return { id: "wide", sources };
+}
+
+/*
+ * Counts the elements that array scans and copies touch, without timers, so the test is
+ * the same on every machine. Linear code does about twice the work for twice the input.
+ */
+function arrayWork(run) {
+  const names = ["indexOf", "lastIndexOf", "includes", "shift", "unshift", "splice", "concat"];
+  const saved = names.map((name) => Array.prototype[name]);
+  let work = 0;
+  names.forEach((name, i) => {
+    Array.prototype[name] = function () {
+      work += this.length;
+      return saved[i].apply(this, arguments);
+    };
+  });
+  try {
+    run();
+  } finally {
+    names.forEach((name, i) => (Array.prototype[name] = saved[i]));
+  }
+  return work;
+}
+const small = arrayWork(() => E.sourceRoots(wideRecord(2000)));
+const large = arrayWork(() => E.sourceRoots(wideRecord(4000)));
+ok(
+  "doubling the sources at most doubles the scanning work (" + small + " -> " + large + ")",
+  large <= 2.2 * small + 1000
+);
+
+const chain = [];
+for (let i = 0; i < 50000; i++) {
+  const provenance = i ? derived(["c" + (i - 1)], []) : ORIGINAL();
+  chain.push(source("c" + i, "Publisher " + i, "https://c" + i + ".example/x", "PRIMARY", provenance));
+}
+check(
+  "a chain of 50,000 derivations is walked without running out of stack",
+  E.sourceRoots({ sources: chain }).verdict,
+  "SINGLE_ROOT"
+);
+
+const wide = wideRecord(3000);
+check(
+  "a large record gives the same result in any source order",
+  JSON.stringify(E.sourceRoots({ id: "wide", sources: wide.sources.slice().reverse() })),
+  JSON.stringify(E.sourceRoots(wide))
 );
 
 /* ------------------------------------------------------------ real dataset */

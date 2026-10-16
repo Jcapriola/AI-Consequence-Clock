@@ -640,9 +640,13 @@
     });
   }
 
+  /* First occurrence order, with a keyed lookup so long lists stay linear. Values are strings. */
   function distinct(values) {
-    return values.filter(function (value, index) {
-      return values.indexOf(value) === index;
+    var seen = Object.create(null);
+    return values.filter(function (value) {
+      if (seen[value]) return false;
+      seen[value] = true;
+      return true;
     });
   }
 
@@ -678,9 +682,9 @@
   }
 
   /*
-   * True when a source's origin cannot be followed: it is UNKNOWN, it is DERIVED from
-   * nothing that can be found, or its annotation contradicts itself. The page does not
-   * run the validator, so a malformed annotation must not read as a traced one.
+   * True when a source's own annotation cannot be followed: it is UNKNOWN, it is DERIVED
+   * from nothing that can be found, or it contradicts itself. The page does not run the
+   * validator, so a malformed annotation must not read as a traced one.
    */
   function isUntraced(source, attachedIds) {
     var kind = provenanceKind(source);
@@ -690,7 +694,7 @@
     if (kind === "UNKNOWN") return true;
     if (kind === "ORIGINAL") return internal.length + external.length > 0;
     var unresolved = internal.some(function (ref) {
-      return !has(attachedIds, ref);
+      return attachedIds[ref] !== true;
     });
     return unresolved || internal.length + external.length === 0;
   }
@@ -699,13 +703,10 @@
     var sources = (Array.isArray(record && record.sources) ? record.sources : []).filter(function (source) {
       return !!source && typeof source === "object";
     });
-    var attachedIds = sources
-      .map(function (source) {
-        return source.id;
-      })
-      .filter(function (id) {
-        return typeof id === "string";
-      });
+    var attachedIds = Object.create(null);
+    sources.forEach(function (source) {
+      if (typeof source.id === "string") attachedIds[source.id] = true;
+    });
     return sources
       .map(function (source) {
         var id = typeof source.id === "string" ? source.id : "";
@@ -725,78 +726,161 @@
       // Sorted so the output does not depend on source order.
       .sort(function (a, b) {
         return compareStrings(a.sortKey, b.sortKey);
+      })
+      .map(function (node, index) {
+        node.index = index;
+        return node;
       });
   }
 
-  /* Two sources sharing any of these keys belong to the same root. */
-  function linkKeys(node) {
-    var keys = [];
-    var host = urlHost(node.source.url);
-    if (node.publisher) keys.push("publisher:" + node.publisher);
-    if (host) keys.push("host:" + host);
-    if (node.id) keys.push("id:" + node.id);
-    derivedFrom(node.source, "derives_from_internal").forEach(function (ref) {
-      keys.push("id:" + ref);
-    });
-    externalRootsOf(node.source).forEach(function (key) {
-      keys.push("external:" + key);
-    });
-    return keys;
+  /* Disjoint sets over node indexes. The smallest index always represents its set, so groups keep node order. */
+  function disjointSets(size) {
+    var parent = [];
+    for (var i = 0; i < size; i++) parent.push(i);
+    function find(index) {
+      while (parent[index] !== index) {
+        parent[index] = parent[parent[index]];
+        index = parent[index];
+      }
+      return index;
+    }
+    function union(a, b) {
+      var rootA = find(a);
+      var rootB = find(b);
+      if (rootA < rootB) parent[rootB] = rootA;
+      else if (rootB < rootA) parent[rootA] = rootB;
+    }
+    return { find: find, union: union };
   }
 
-  function adjacency(nodes) {
-    var holders = Object.create(null);
-    var adjacent = nodes.map(function () {
-      return [];
+  /* Puts every index that shares a key in one set. */
+  function joinOnKeys(sets, indexes, keysOf) {
+    var holder = Object.create(null);
+    indexes.forEach(function (index) {
+      keysOf(index).forEach(function (key) {
+        if (holder[key] === undefined) holder[key] = index;
+        else sets.union(holder[key], index);
+      });
     });
-    nodes.forEach(function (node, index) {
-      linkKeys(node).forEach(function (key) {
-        var previous = holders[key];
-        if (previous !== undefined) {
-          adjacent[previous].push(index);
-          adjacent[index].push(previous);
+  }
+
+  function indexesOf(nodes) {
+    return nodes.map(function (node) {
+      return node.index;
+    });
+  }
+
+  /* Each node's attached parents, by index. A reference to a missing id is already untraced. */
+  function parentIndexes(nodes) {
+    var byId = Object.create(null);
+    nodes.forEach(function (node) {
+      if (node.id && byId[node.id] === undefined) byId[node.id] = node.index;
+    });
+    return nodes.map(function (node) {
+      return derivedFrom(node.source, "derives_from_internal")
+        .map(function (ref) {
+          return byId[ref];
+        })
+        .filter(function (index) {
+          return index !== undefined;
+        });
+    });
+  }
+
+  /*
+   * A node is traced when its own annotation is readable and every source it rests on is
+   * traced. Iterative, so a long chain cannot overflow the stack; a loop reaches no origin,
+   * so its members are not traced.
+   */
+  function traceUpward(nodes, parents) {
+    var state = [];
+    var traced = [];
+    nodes.forEach(function (start) {
+      if (state[start.index]) return;
+      var path = [{ index: start.index, next: 0, ok: !start.untraced }];
+      state[start.index] = 1;
+      while (path.length) {
+        var top = path[path.length - 1];
+        var above = parents[top.index];
+        if (top.next < above.length) {
+          var parent = above[top.next++];
+          if (state[parent] === 1) {
+            top.ok = false;
+          } else if (state[parent] === 2) {
+            top.ok = top.ok && traced[parent];
+          } else {
+            state[parent] = 1;
+            path.push({ index: parent, next: 0, ok: !nodes[parent].untraced });
+          }
+          continue;
         }
-        holders[key] = index;
-      });
+        path.pop();
+        state[top.index] = 2;
+        traced[top.index] = top.ok;
+        if (path.length) path[path.length - 1].ok = path[path.length - 1].ok && top.ok;
+      }
     });
-    return adjacent;
+    return traced;
   }
 
-  function componentFrom(start, adjacent, seen) {
-    var queue = [start];
-    var reached = [];
-    seen[start] = true;
-    while (queue.length) {
-      var current = queue.shift();
-      reached.push(current);
-      adjacent[current].forEach(function (next) {
-        if (seen[next]) return;
-        seen[next] = true;
-        queue.push(next);
+  /* Every node a qualifying source rests on, followed upward with a head-index queue. */
+  function anchoredNodes(nodes, parents) {
+    var anchored = [];
+    var queue = [];
+    nodes.forEach(function (node) {
+      if (!node.qualifying) return;
+      anchored[node.index] = true;
+      queue.push(node.index);
+    });
+    for (var head = 0; head < queue.length; head++) {
+      parents[queue[head]].forEach(function (parent) {
+        if (anchored[parent]) return;
+        anchored[parent] = true;
+        queue.push(parent);
       });
     }
-    return reached.sort(function (a, b) {
-      return a - b;
-    });
+    return anchored;
   }
 
-  function connectedComponents(nodes) {
-    var adjacent = adjacency(nodes);
-    var seen = [];
-    var components = [];
-    nodes.forEach(function (unused, start) {
-      if (seen[start]) return;
-      components.push(
-        componentFrom(start, adjacent, seen).map(function (index) {
-          return nodes[index];
-        })
-      );
+  /*
+   * Two qualifying sources are one piece of evidence when they share an outlet (the same
+   * publisher or website), an outside origin, or any source they rest on. Links are only
+   * followed upward from evidence, so a roundup that cites two reports joins neither.
+   */
+  function evidenceGroups(nodes) {
+    var parents = parentIndexes(nodes);
+    var anchored = anchoredNodes(nodes, parents);
+    var sets = disjointSets(nodes.length);
+    joinOnKeys(sets, indexesOf(nodes), function (index) {
+      var keys = [];
+      var host = urlHost(nodes[index].source.url);
+      if (nodes[index].publisher) keys.push("publisher:" + nodes[index].publisher);
+      if (host) keys.push("host:" + host);
+      return keys;
     });
-    return components;
-  }
+    var upstream = indexesOf(nodes).filter(function (index) {
+      return anchored[index];
+    });
+    joinOnKeys(sets, upstream, function (index) {
+      return externalRootsOf(nodes[index].source);
+    });
+    upstream.forEach(function (index) {
+      parents[index].forEach(function (parent) {
+        sets.union(index, parent);
+      });
+    });
 
-  function isOriginal(node) {
-    return node.original;
+    var groups = [];
+    var slot = Object.create(null);
+    nodes.forEach(function (node) {
+      var root = sets.find(node.index);
+      if (slot[root] === undefined) {
+        slot[root] = groups.length;
+        groups.push([]);
+      }
+      groups[slot[root]].push(node);
+    });
+    return { groups: groups, traced: traceUpward(nodes, parents) };
   }
 
   function holdsQualifying(members) {
@@ -805,10 +889,10 @@
     });
   }
 
-  function describeComponent(members) {
+  function describeComponent(members, traced) {
     var roots = [];
     members.forEach(function (node) {
-      roots = roots.concat(externalRootsOf(node.source));
+      Array.prototype.push.apply(roots, externalRootsOf(node.source));
     });
     return {
       sources: members.map(function (node) {
@@ -819,12 +903,10 @@
       }),
       external_roots: distinct(roots).sort(),
       qualifying: holdsQualifying(members),
-      // One untraced member could restate any other. A loop of derivations has no origin at all.
-      untraced:
-        (!roots.length && !members.some(isOriginal)) ||
-        members.some(function (node) {
-          return node.untraced;
-        })
+      // One untraced member could restate any other, whatever its own grade.
+      untraced: members.some(function (node) {
+        return !traced[node.index];
+      })
     };
   }
 
@@ -847,26 +929,38 @@
     return distinct(named).length + (qualifying.length - named.length);
   }
 
-  /* The sources a reviewer must annotate before the record can leave INDETERMINATE. */
-  function collectPending(groups) {
+  /*
+   * The sources a reviewer must annotate before the record can leave INDETERMINATE: the
+   * unreadable annotations, or, when there are none, the members of a loop.
+   */
+  function collectPending(groups, traced) {
     var pending = [];
     groups.filter(holdsQualifying).forEach(function (members) {
-      members.forEach(function (node) {
-        if (node.untraced) pending.push(node.source);
+      var unreadable = members.filter(function (node) {
+        return node.untraced;
+      });
+      var blocking = unreadable.length
+        ? unreadable
+        : members.filter(function (node) {
+            return !traced[node.index];
+          });
+      blocking.forEach(function (node) {
+        pending.push(node.source);
       });
     });
     return pending;
   }
 
   /*
-   * Groups one record's sources into roots of evidence. Every source is a node, so a
-   * roundup can bridge two articles that drew on it, but only a component holding a
-   * qualifying source is counted.
+   * Groups one record's sources into pieces of evidence. Every source is drawn, but only a
+   * group holding a qualifying source is counted.
    */
   function sourceRoots(record) {
     var nodes = sourceNodes(record);
-    var groups = connectedComponents(nodes);
-    var components = groups.map(describeComponent);
+    var grouped = evidenceGroups(nodes);
+    var components = grouped.groups.map(function (members) {
+      return describeComponent(members, grouped.traced);
+    });
     var counted = components.filter(function (component) {
       return component.qualifying;
     });
@@ -886,7 +980,7 @@
       missing_publisher_count: qualifying.filter(function (node) {
         return node.publisher === "";
       }).length,
-      pending_sources: collectPending(groups),
+      pending_sources: collectPending(grouped.groups, grouped.traced),
       components: components
     };
   }

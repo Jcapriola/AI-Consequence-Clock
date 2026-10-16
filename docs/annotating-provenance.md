@@ -72,6 +72,10 @@ These joins are not annotated; `js/evidence.js` always applies them:
 The second is conservative on purpose: two different authors on one platform read as one root.
 The possible error is counting too few roots, never too many.
 
+Derivations are followed in one direction only: from a piece of evidence up to what it rests
+on. Two sources that rest on the same thing are one root. A source that only cites others, such
+as a roundup listing two independent reports, does not join those reports to each other.
+
 ## Reading the result
 
 For each record the published rule counts:
