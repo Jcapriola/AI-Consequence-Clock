@@ -689,6 +689,15 @@
     el("feed").innerHTML = feed;
   }
 
+  async function sha256Hex(text) {
+    var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.prototype.map
+      .call(new Uint8Array(buf), function (b) {
+        return b.toString(16).padStart(2, "0");
+      })
+      .join("");
+  }
+
   async function attachProvenance(summary) {
     var ids = STATE.records
       .map(function (r) {
@@ -697,13 +706,10 @@
       .sort()
       .join(",");
     var digest = "unavailable";
+    var content = null;
     try {
-      var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ids));
-      digest = Array.prototype.map
-        .call(new Uint8Array(buf), function (b) {
-          return b.toString(16).padStart(2, "0");
-        })
-        .join("");
+      digest = await sha256Hex(ids);
+      content = await sha256Hex(E.canonicalJson(STATE.records));
     } catch (e) {
       digest = "unavailable in this context";
     }
@@ -715,7 +721,7 @@
     } catch (e) {
       published = null;
     }
-    var provenance = E.comparePublishedSummary(summary, published, digest);
+    var provenance = E.comparePublishedSummary(summary, published, { idDigest: digest, contentDigest: content });
     var digestLabel = /^[0-9a-f]{64}$/i.test(String(digest || "")) ? digest.slice(0, 16) + "…" : "unavailable";
 
     /*
@@ -754,10 +760,21 @@
       " of " +
       summary.record_count +
       " · id sha256 " +
-      digestLabel +
-      " · " +
-      provenance.label;
+      digestLabel;
+
+    var look = INTEGRITY_BADGE[provenance.status] || INTEGRITY_BADGE.unavailable;
+    var badge = el("integrity");
+    badge.className = "tag " + look[0];
+    badge.textContent = look[1];
+    badge.title = provenance.label;
   }
+
+  var INTEGRITY_BADGE = {
+    matches: ["tag-in", "Data matches published summary"],
+    differs: ["tag-bad", "Data differs from published summary"],
+    matches_without_checksum: ["tag-out", "Data not verified"],
+    unavailable: ["tag-out", "Data not verified"]
+  };
 
   /* --------------------------------------------------------------- events */
 

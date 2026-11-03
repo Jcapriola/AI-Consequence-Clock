@@ -26,6 +26,7 @@ node tests/sensitivity.test.js
 node tests/methodology-render.test.js
 node tests/provenance.test.js
 node tests/source-graph.test.js
+node tests/provenance-history.test.js
 ```
 
 The same checks run automatically on every pull request, along with a check that the generated CSV and baseline match the JSON.
@@ -38,7 +39,7 @@ If you add a source, run `node tests/find-archives.js` so the URL is checked aga
 
 Prefer a source URL that a web archive can actually capture. Authoritative JSON APIs give the most exact data and the least durable citation: every unarchivable source in this dataset is an API endpoint. If the only good source is an API, say so in `source_quality_basis` rather than pretending the link will outlive the service.
 
-A source may carry an optional `provenance` annotation saying whether it is the original evidence or derives from another source. Read `docs/annotating-provenance.md` first. Annotate only what the source itself states, cite it in `note`, and when in doubt leave the source unannotated, which means `UNKNOWN`. Never generate these annotations with a tool.
+A source may carry an optional `provenance` annotation saying whether it is the original evidence or derives from another source. Read `docs/annotating-provenance.md` first. Annotate only what the source itself states, back each claim with a quote and a Wayback snapshot, and when in doubt leave the source unannotated, which means `UNKNOWN`. Never generate these annotations with a tool.
 
 If you changed a record, regenerate the CSV with `node tests/export-csv.js` and commit it, so the generated file never disagrees with the JSON it came from.
 

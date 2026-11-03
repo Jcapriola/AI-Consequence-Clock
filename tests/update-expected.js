@@ -20,6 +20,8 @@ const dataset = JSON.parse(fs.readFileSync(path.join(root, "data", "incidents.js
 const today = new Date().toISOString().slice(0, 10);
 const summary = E.derive(dataset, "2026-09-28");
 const headline = dataset.incidents.filter(E.isHeadlineEligible);
+const audit = E.provenanceSummary(dataset.incidents);
+const sha256 = (text) => crypto.createHash("sha256").update(text).digest("hex");
 
 function axisMap(name) {
   return summary.axes[name].reduce((acc, g) => {
@@ -58,6 +60,8 @@ const expected = {
     acc[name] = axisMap(name);
     return acc;
   }, {}),
+  // Pinned so that annotating a source shows, in review, which verdicts it moved.
+  provenance: { verdicts: audit.verdicts, ids: audit.ids },
   sensitivity: E.sensitivityTable(dataset.incidents).map((r) => ({
     id: r.id,
     total: r.total,
@@ -82,6 +86,8 @@ const published = {
     .createHash("sha256")
     .update(dataset.incidents.map((i) => i.id).sort().join(","))
     .digest("hex"),
+  content_checksum_input: "canonical JSON of the incidents array, keys sorted",
+  dataset_content_sha256: sha256(E.canonicalJson(dataset.incidents)),
   hero_metric: "sourced_cases_lacking_documented_execution_time_authorization",
   hero_count: summary.authorization_gap,
   hero_record_ids: headline.filter(E.isAuthGap).map((r) => r.id),

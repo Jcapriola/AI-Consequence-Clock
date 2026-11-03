@@ -27,6 +27,14 @@ jobs:
         run: node tests/provenance.test.js
       - name: Source graph rendering
         run: node tests/source-graph.test.js
+      - name: Provenance revision rule
+        run: node tests/provenance-history.test.js
+      - name: Provenance changes carry a revision
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --depth=1 origin "${{ github.event.pull_request.base.sha }}"
+          git show "${{ github.event.pull_request.base.sha }}:data/incidents.json" > "$RUNNER_TEMP/base-incidents.json"
+          node tests/provenance-history.js "$RUNNER_TEMP/base-incidents.json" data/incidents.json
 
       # Generated files must match the JSON they come from. update-expected.js
       # stamps today's date into "reviewed", and export-csv.js writes CRLF, so

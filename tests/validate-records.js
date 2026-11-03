@@ -205,6 +205,37 @@ function resolvedInternalRefs(refs, source, sourceIds, where, id) {
   return resolved;
 }
 
+var SNAPSHOT = /^https:\/\/web\.archive\.org\/web\/\d{14}[a-z_]*\/(.+)$/;
+
+/* Wayback keeps the URL as captured, often with http:// or a trailing slash. */
+function comparableUrl(url) {
+  return String(url || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\/(www\.)?/, "")
+    .replace(/\/+$/, "");
+}
+
+/* Every claim needs a quote from the source and an archived copy anyone can open to check it. */
+function checkEvidence(p, source, claims, where, id) {
+  var supported = Object.create(null);
+  (Array.isArray(p.evidence) ? p.evidence : []).forEach(function (entry, i) {
+    var at = where + ".evidence[" + i + "]";
+    var quote = entry && typeof entry.quote === "string" ? entry.quote.trim() : "";
+    if (quote.length < 20 || quote.length > 300) {
+      fail(id, at + ".quote must be 20-300 characters copied from the source");
+    }
+    var snapshot = SNAPSHOT.exec(String(entry && entry.snapshot_url));
+    if (!snapshot || comparableUrl(snapshot[1]) !== comparableUrl(source.url)) {
+      fail(id, at + ".snapshot_url must be a web.archive.org capture of this source's url");
+    }
+    if (entry && typeof entry.supports === "string") supported[entry.supports.toLowerCase()] = true;
+  });
+  claims.forEach(function (claim) {
+    if (!supported[claim.toLowerCase()]) fail(id, where + '.evidence has no quote and snapshot for "' + claim + '"');
+  });
+}
+
 /* Checks one declared provenance and returns the internal references that resolve. */
 function checkDeclaration(source, sourceWhere, sourceIds, id) {
   if (!checkDeclarationShape(source, sourceWhere, id)) return [];
@@ -213,6 +244,8 @@ function checkDeclaration(source, sourceWhere, sourceIds, id) {
   var internal = stringListOrFail(p.derives_from_internal, where + ".derives_from_internal", id);
   var external = stringListOrFail(p.derives_from_external, where + ".derives_from_external", id);
   checkReferenceCount(p.kind, internal.length + external.length, where, id);
+  if (p.kind === "ORIGINAL") checkEvidence(p, source, ["original"], where, id);
+  if (p.kind === "DERIVED") checkEvidence(p, source, internal.concat(external), where, id);
   checkExternalKeys(external, where, id);
   return resolvedInternalRefs(internal, source, sourceIds, where, id);
 }
