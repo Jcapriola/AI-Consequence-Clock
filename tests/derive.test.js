@@ -413,17 +413,32 @@ console.log("\nPublished summary.json agrees with the records");
 const publishedPath = path.join(__dirname, "..", "data", "summary.json");
 if (fs.existsSync(publishedPath)) {
   const published = JSON.parse(fs.readFileSync(publishedPath, "utf8"));
-  const digest = require("crypto")
-    .createHash("sha256")
-    .update(records.map((r) => r.id).sort().join(","))
-    .digest("hex");
+  const sha256 = (text) => require("crypto").createHash("sha256").update(text).digest("hex");
+  const digest = sha256(records.map((r) => r.id).sort().join(","));
+  const content = sha256(E.canonicalJson(records));
+  const digests = { idDigest: digest, contentDigest: content };
   check("summary.json record count", published.record_count, summary.record_count);
   check("summary.json eligible count", published.eligible_record_count, summary.headline_count);
   check("summary.json hero count", published.hero_count, summary.authorization_gap);
   check("summary.json checksum", published.dataset_checksum_sha256, digest);
+  check("summary.json content checksum", published.dataset_content_sha256, content);
   check("summary.json headline rule is unchanged", published.headline_rule, dataset.headline_rule);
-  const provenance = E.comparePublishedSummary(summary, published, digest);
+  const provenance = E.comparePublishedSummary(summary, published, digests);
   check("footer provenance reports a full summary match", provenance.status, "matches");
+  check(
+    "without the content checksum it is not a full match",
+    E.comparePublishedSummary(summary, published, digest).status,
+    "matches_without_checksum"
+  );
+  // An edited title keeps the ids, so only the content checksum can see it.
+  const retitled = records.map((r, i) => (i === 0 ? { ...r, title: r.title + " (edited)" } : r));
+  const edited = E.comparePublishedSummary(summary, published, {
+    idDigest: digest,
+    contentDigest: sha256(E.canonicalJson(retitled))
+  });
+  check("an edited title is reported as a content mismatch", edited.mismatches, ["dataset_content_sha256"]);
+  const reordered = records.map((r) => Object.fromEntries(Object.entries(r).reverse()));
+  check("key order inside a record does not change the checksum", sha256(E.canonicalJson(reordered)), content);
   const noSummary = E.comparePublishedSummary(summary, null, digest);
   check("footer provenance distinguishes a failed summary fetch", noSummary.status, "unavailable");
   const noCrypto = E.comparePublishedSummary(summary, published, "unavailable in this context");

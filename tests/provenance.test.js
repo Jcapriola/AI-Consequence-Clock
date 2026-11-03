@@ -55,6 +55,20 @@ const derived = (internal, external) => ({
 const SECONDARY = "INDEPENDENT_SECONDARY";
 const CVE_ROOT = ["cve:CVE-2024-0001"];
 
+/* Graph fixtures get well-formed evidence; the evidence rules have their own section. */
+const QUOTE = "Fixture quote copied from the archived source page.";
+const snapshotOf = (url) => "https://web.archive.org/web/20260101000000/" + url;
+function withEvidence(sources) {
+  return sources.map((s) => {
+    const p = s && s.provenance;
+    if (!p || p.evidence !== undefined || (p.kind !== "ORIGINAL" && p.kind !== "DERIVED")) return s;
+    const lists = [p.derives_from_internal, p.derives_from_external].filter(Array.isArray);
+    const claims = p.kind === "ORIGINAL" ? ["original"] : [].concat(...lists);
+    const evidence = claims.map((claim) => ({ supports: claim, quote: QUOTE, snapshot_url: snapshotOf(s.url) }));
+    return { ...s, provenance: { ...p, evidence } };
+  });
+}
+
 function source(id, publisher, url, grade, provenance) {
   const s = {
     id,
@@ -246,7 +260,7 @@ const f3 = FIXTURES[2];
 const corroborated = dataset.incidents.find((r) => r.verification_status === "CORROBORATED");
 check(
   "the validator accepts f3's sources on a CORROBORATED record",
-  V.validateDataset({ ...dataset, incidents: [{ ...corroborated, sources: f3.sources }] }).problems,
+  V.validateDataset({ ...dataset, incidents: [{ ...corroborated, sources: withEvidence(f3.sources) }] }).problems,
   []
 );
 check(
@@ -410,10 +424,11 @@ const shell = dataset.incidents.find((r) => !E.isHeadlineEligible(r));
 /* The record's grade must be the best grade among its sources, so the shell takes it from them. */
 const bestGrade = (sources) =>
   ["PRIMARY", "INDEPENDENT_SECONDARY", "ROUNDUP"].find((grade) => sources.some((s) => s.evidence_grade === grade));
-const asDataset = (sources) => ({
+const asRawDataset = (sources) => ({
   ...dataset,
   incidents: [{ ...shell, verification_status: "REPORTED", evidence_grade: bestGrade(sources), sources }]
 });
+const asDataset = (sources) => asRawDataset(withEvidence(sources));
 
 const SEEDS = Array.from({ length: 500 }, (_, i) => i + 1);
 const CASES = SEEDS.map((seed) => ({ seed, sources: randomSources(makeRandom(seed)) }));
@@ -776,6 +791,110 @@ check(
   "a non-string id on an annotated source is reported once",
   problemsAfter((s) => (s[3].id = 7)).length,
   1
+);
+
+console.log("\nValidator: a quote and a snapshot for every claim");
+const evidenceOf = (sources, id) => provenanceOf(sources, id).evidence;
+const problemsAfterEvidence = (mutate) => {
+  const sources = withEvidence(VALID());
+  mutate(sources);
+  return V.validateDataset(asRawDataset(sources)).problems;
+};
+const EVIDENCE_MUTATIONS = [
+  [
+    "ORIGINAL with no evidence",
+    /no quote and snapshot for "original"/,
+    (s) => delete provenanceOf(s, "advisory").evidence
+  ],
+  [
+    "a DERIVED reference with no evidence",
+    /no quote and snapshot for "cve:cve-2026-0001"/,
+    (s) => (evidenceOf(s, "daily")[0].supports = "advisory")
+  ],
+  ["a quote that is too short", /quote must be 20-300/, (s) => (evidenceOf(s, "advisory")[0].quote = "too short")],
+  ["a quote that is too long", /quote must be 20-300/, (s) => (evidenceOf(s, "advisory")[0].quote = "x".repeat(301))],
+  [
+    "a snapshot that is not on the Wayback Machine",
+    /web\.archive\.org capture/,
+    (s) => (evidenceOf(s, "advisory")[0].snapshot_url = "https://example.com/copy")
+  ],
+  [
+    "a snapshot of another page",
+    /web\.archive\.org capture/,
+    (s) => (evidenceOf(s, "advisory")[0].snapshot_url = snapshotOf("https://elsewhere.example/page"))
+  ]
+];
+EVIDENCE_MUTATIONS.forEach(([name, pattern, mutate]) => {
+  ok(name + " fails validation", problemsAfterEvidence(mutate).some((p) => pattern.test(p)));
+});
+check(
+  "a snapshot stored with http, www and a trailing slash still matches its source",
+  problemsAfterEvidence((s) => {
+    evidenceOf(s, "advisory")[0].snapshot_url = snapshotOf("http://www.vendor.example/advisory/1/");
+  }),
+  []
+);
+
+console.log("\nPinned baseline (tests/expected.json)");
+const pinned = JSON.parse(fs.readFileSync(path.join(__dirname, "expected.json"), "utf8")).provenance;
+const audit = E.provenanceSummary(dataset.incidents);
+check("pinned verdicts", { verdicts: audit.verdicts, ids: audit.ids }, pinned);
+
+console.log("\nFail-closed reliance");
+check(
+  "only the exact string INDEPENDENT_CONFIRMED is confirmed",
+  ["INDEPENDENT_CONFIRMED", "SINGLE_ROOT", "FUTURE_STATE", "independent_confirmed", "", null, undefined, {}].map(
+    E.isConfirmed
+  ),
+  [true, false, false, false, false, false, false, false]
+);
+const CONTEXT = {
+  dataset: { methodology_version: "0.2.2", evidence_layer_version: "0.1.0", last_evidence_review: "2026-09-28" },
+  comparison: { status: "matches" },
+  today: "2026-10-29"
+};
+const confirmedRoots = rootsOf(FIXTURES[0].sources);
+const codes = (roots, context) => E.relianceDecision(roots, context).reasons.map((r) => r.code);
+check("a confirmed record with verified, current data is relied on", E.relianceDecision(confirmedRoots, CONTEXT), {
+  allowed: true,
+  verdict: "INDEPENDENT_CONFIRMED",
+  reasons: []
+});
+const withDataset = (fields) => ({ ...CONTEXT, dataset: { ...CONTEXT.dataset, ...fields } });
+const DENIALS = [
+  ["no context at all", undefined, ["UNKNOWN_VERSION", "UNKNOWN_VERSION", "STALE", "SUMMARY_MISMATCH"]],
+  ["a tampered or unverified summary", { ...CONTEXT, comparison: { status: "differs" } }, ["SUMMARY_MISMATCH"]],
+  [
+    "a summary checked without its content checksum",
+    { ...CONTEXT, comparison: { status: "matches_without_checksum" } },
+    ["SUMMARY_MISMATCH"]
+  ],
+  ["a review older than 90 days", { ...CONTEXT, today: "2027-01-01" }, ["STALE"]],
+  ["a review dated in the future", { ...CONTEXT, today: "2026-09-01" }, ["STALE"]],
+  ["a missing review date", withDataset({ last_evidence_review: undefined }), ["STALE"]],
+  ["a future methodology version", withDataset({ methodology_version: "0.3.0" }), ["UNKNOWN_VERSION"]]
+];
+DENIALS.forEach(([name, context, expected]) => {
+  check(name + " is denied", codes(confirmedRoots, context), expected);
+});
+check("a missing result is denied", codes(null, CONTEXT), ["NOT_CONFIRMED"]);
+check("an unknown verdict is denied", codes({ verdict: "FUTURE_STATE" }, CONTEXT), ["NOT_CONFIRMED"]);
+const pending = E.relianceDecision(rootsOf(FIXTURES[4].sources), CONTEXT);
+check(
+  "an undetermined record names the sources still to annotate",
+  [pending.allowed, pending.reasons.map((r) => r.code), pending.reasons[1].sources],
+  [false, ["NOT_CONFIRMED", "PENDING_SOURCES"], ["daily"]]
+);
+FIXTURES[0].sources.forEach((s, i) => {
+  const stripped = FIXTURES[0].sources.map((x, j) => (j === i ? { ...x, provenance: undefined } : x));
+  const allowed = E.relianceDecision(rootsOf(stripped), CONTEXT).allowed;
+  check("removing the provenance of " + s.id + " withdraws reliance", allowed, false);
+});
+ok(
+  "verdicts, their definitions and the reason codes cannot be changed at runtime",
+  [E.PROVENANCE_VERDICTS, E.verdictDefinition("INDEPENDENT_CONFIRMED"), E.RELIANCE_REASONS, E.KNOWN_VERSIONS].every(
+    Object.isFrozen
+  )
 );
 
 console.log("\n" + "-".repeat(64));

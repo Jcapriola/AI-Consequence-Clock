@@ -39,6 +39,7 @@ node tests/sensitivity.test.js
 node tests/methodology-render.test.js
 node tests/provenance.test.js
 node tests/source-graph.test.js
+node tests/provenance-history.test.js
 ```
 
 `derive.test.js` recomputes every published total from `data/incidents.json` and compares them against the pinned baseline in `tests/expected.json`. No dependencies, no test framework. `validate.test.js` mutates a copy of the file: a lowercase `verified` status, a `javascript:` archive URL, a PRIMARY record with no named primary document, and the geography placeholder `Unknown` must each fail validation. The live file must not. The same file mutates pairs of fields that state one fact twice, such as `rolled_back` against `reversibility`, and each contradiction must fail.
@@ -94,6 +95,15 @@ Every CSV row carries `verification_status`, `evidence_grade` and `in_headline_t
 
 Money columns stay separate and currency-tagged. They are read from `financial_loss_confirmed` and `financial_loss_estimated`, the same fields the page uses. `confirmed` and `estimated` are never merged into one column, because a spreadsheet will happily sum a mixed column and produce a figure no source supports. If a record carries a confirmed amount, the exporter refuses to write a CSV that omits it.
 
+## Relying on a record
+
+Only `INDEPENDENT_CONFIRMED` permits reliance. `relianceDecision(sourceRoots(record), context)`
+denies by default and returns stable reason codes: the verdict is not confirmed, the methodology
+version is unknown, the last review is missing, in the future or older than 90 days, or the data
+does not match `data/summary.json`. `dataset_content_sha256` there covers every field of every
+record, so an edit that keeps the same ids is still detected. Even a confirmed record is
+confirmed under the reviewers' annotations.
+
 ## What’s in the box
 
 | Path | Role |
@@ -115,7 +125,8 @@ Money columns stay separate and currency-tagged. They are read from `financial_l
 | `tests/validate.test.js` | Mutations that arithmetic would swallow must fail validation |
 | `tests/sensitivity.test.js` | The sensitivity table agrees with the published rule and the pinned baseline |
 | `tests/methodology-render.test.js` | The methodology page renders that table escaped, and fails legibly |
-| `tests/provenance.test.js` | Source-root fixtures, properties, and validator mutations for `provenance` |
+| `tests/provenance.test.js` | Source-root fixtures, properties, validator mutations for `provenance`, and fail-closed reliance |
+| `tests/provenance-history.js` | Rejects a provenance change without a recorded revision; CI runs it against a PR's base |
 | `tests/source-graph.test.js` | The source graph draws one box per source, escaped, with the audit's verdict |
 | `scripts/provenance-report.js` | Prints the independence audit and the annotation backlog. Reads, never writes |
 | `docs/annotating-provenance.md` | How to annotate a source's provenance. When in doubt, `UNKNOWN` |

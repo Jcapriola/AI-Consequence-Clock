@@ -659,6 +659,7 @@ body {
 }
 .tag-in { background: rgba(61,255,138,0.12); color: var(--green); }
 .tag-out { background: rgba(138,160,184,0.12); color: var(--muted); }
+.tag-bad { background: rgba(255,77,77,0.14); color: var(--red); }
 
 /* Occurrence split marker */
 .occ {

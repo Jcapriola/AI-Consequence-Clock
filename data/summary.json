@@ -21,6 +21,8 @@
     "acc-2026-07-15-mcp-python-sdk-task-authorization"
   ],
   "dataset_checksum_sha256": "39c4692fea74fe7619ef60ffc849b79d01ed9842a56bb616c2f6f753ccc1c617",
+  "content_checksum_input": "canonical JSON of the incidents array, keys sorted",
+  "dataset_content_sha256": "78c0f7d0ed1a1c074be4c8e3bb3cd09c257ea318ea72501e597e50d5febff7a6",
   "hero_metric": "sourced_cases_lacking_documented_execution_time_authorization",
   "hero_count": 3,
   "hero_record_ids": [
