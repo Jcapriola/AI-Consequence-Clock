@@ -28,7 +28,14 @@ exactly the error this field exists to prevent. One `UNKNOWN` too many only leav
     "kind": "DERIVED",
     "derives_from_internal": ["cve"],
     "derives_from_external": [],
-    "note": "The entry states 'Source: MITRE' and reproduces the CVE record's description."
+    "evidence": [
+      {
+        "supports": "cve",
+        "quote": "Source: MITRE ...",
+        "snapshot_url": "https://web.archive.org/web/<timestamp>/https://..."
+      }
+    ],
+    "note": "The entry reproduces the CVE record's description."
   }
 }
 ```
@@ -45,15 +52,18 @@ exactly the error this field exists to prevent. One `UNKNOWN` too many only leav
   Allowed prefixes: `cve`, `vendor`, `paper`, `researcher`, `regulator`, `other`. For example
   `cve:CVE-2026-30306`, `vendor:acme-blog-2026-05-12` or `paper:arxiv-2401-12345`. Keys are
   compared without regard to case.
-- `note`: free text. **Every edge carries its citation here**: the sentence, link or credit in
-  the source that lets you say it derives from that root. The validator does not enforce it;
-  a reviewer will. If you cannot cite it, it is not an edge. It is `UNKNOWN`.
+- `evidence`: required on `ORIGINAL` and `DERIVED`. One entry per claim: `supports` is
+  `"original"`, or the id or key it derives from. `quote` is 20 to 300 characters copied from
+  the source (the credit, the link, the "according to"). `snapshot_url` is a Wayback Machine
+  capture of this same source, so a reviewer can open it and find the quote. A source that
+  cannot be archived stays `UNKNOWN`.
+- `note`: free text for anything the quote does not make obvious.
 
 ## How to decide
 
 1. Open the source. Remembering where that publisher usually gets its material is not enough.
 2. Does it say explicitly where its claim comes from (a link, a credit, "according to...")? Then
-   it is `DERIVED`, and the citation goes in `note`.
+   it is `DERIVED`, and that passage is the quote.
 3. Is it the party that produced the evidence? Then it is `ORIGINAL`.
 4. Anything else: `UNKNOWN`.
 
@@ -101,8 +111,10 @@ node scripts/provenance-report.js
 The validator rejects malformed or repeated ids, provenance on a source with no id, provenance
 that is not an object, a `note` that is not text, an unknown `kind`, lists that are not arrays of strings, `ORIGINAL` or `UNKNOWN` that list a reference,
 `DERIVED` with no reference, references to sources that do not exist, self-references,
-malformed external keys, and cycles. A `DERIVED` source whose reference cannot be found is
+malformed external keys, cycles, and a claim without a quote and a snapshot of the same
+source. A `DERIVED` source whose reference cannot be found is
 treated as untraced, so its record stays `INDETERMINATE`. Annotating changes a record:
-increment its `revision` and add the `change_log` entry, as with any correction, then follow
+increment its `revision` and add a `change_log` entry with `"changed": ["provenance"]`, which CI
+checks on every pull request, then follow
 CONTRIBUTING (`node tests/update-expected.js`, `node tests/export-csv.js`). Annotating never
 changes a published number, only the shadow metric.

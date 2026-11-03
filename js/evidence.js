@@ -425,14 +425,42 @@
     };
   }
 
+  /* Keys sorted at every level, so Node and the browser hash the same text. */
+  function canonicalJson(value) {
+    if (value === null || value === undefined || typeof value !== "object") {
+      return JSON.stringify(value === undefined ? null : value);
+    }
+    if (Array.isArray(value)) {
+      return "[" + value.map(canonicalJson).join(",") + "]";
+    }
+    var fields = Object.keys(value)
+      .sort()
+      .filter(function (key) {
+        return value[key] !== undefined;
+      })
+      .map(function (key) {
+        return JSON.stringify(key) + ":" + canonicalJson(value[key]);
+      });
+    return "{" + fields.join(",") + "}";
+  }
+
+  function isDigest(value) {
+    return /^[0-9a-f]{64}$/i.test(String(value || ""));
+  }
+
   /*
    * The footer says whether the browser recomputation agrees with data/summary.json.
    * The old check used only a checksum of all incident ids, so changing a record from
    * PRIMARY to ROUNDUP left the digest unchanged while the headline count moved. Compare
    * the published totals themselves, and reserve checksum-only states for actual checksum
    * availability/fetch problems.
+   *
+   * `digests` is the id digest, or { idDigest, contentDigest }. Only the content digest sees
+   * an edit that keeps the same ids, so "matches" requires it once summary.json publishes it.
    */
-  function comparePublishedSummary(summary, published, digest) {
+  function comparePublishedSummary(summary, published, digests) {
+    var given = digests !== null && typeof digests === "object" ? digests : { idDigest: digests };
+    var digest = given.idDigest;
     if (!published) {
       return {
         status: "unavailable",
@@ -448,8 +476,11 @@
       return json(expected[key]) !== json(actual[key]);
     });
 
-    if (/^[0-9a-f]{64}$/i.test(String(digest || ""))) {
-      if (published.dataset_checksum_sha256 !== digest) mismatches.push("dataset_checksum_sha256");
+    if (isDigest(digest) && published.dataset_checksum_sha256 !== digest) {
+      mismatches.push("dataset_checksum_sha256");
+    }
+    if (isDigest(given.contentDigest) && published.dataset_content_sha256 !== given.contentDigest) {
+      mismatches.push("dataset_content_sha256");
     }
 
     if (mismatches.length) {
@@ -461,7 +492,8 @@
       };
     }
 
-    if (!/^[0-9a-f]{64}$/i.test(String(digest || ""))) {
+    var contentRequired = published.dataset_content_sha256 !== undefined;
+    if (!isDigest(digest) || (contentRequired && !isDigest(given.contentDigest))) {
       return {
         status: "matches_without_checksum",
         matches: true,
@@ -606,9 +638,76 @@
   var PROVENANCE_VERDICTS = VERDICT_DEFINITIONS.map(function (definition) {
     return definition.id;
   });
+  VERDICT_DEFINITIONS.forEach(Object.freeze);
+  Object.freeze(VERDICT_DEFINITIONS);
+  Object.freeze(PROVENANCE_VERDICTS);
 
   function verdictDefinition(verdict) {
     return VERDICT_DEFINITIONS[PROVENANCE_VERDICTS.indexOf(verdict)] || null;
+  }
+
+  /* An allow-list: any other value, including one added later, is not confirmed. */
+  function isConfirmed(verdict) {
+    return verdict === "INDEPENDENT_CONFIRMED";
+  }
+
+  var RELIANCE_REASONS = Object.freeze({
+    NOT_CONFIRMED: "NOT_CONFIRMED",
+    PENDING_SOURCES: "PENDING_SOURCES",
+    UNKNOWN_VERSION: "UNKNOWN_VERSION",
+    STALE: "STALE",
+    SUMMARY_MISMATCH: "SUMMARY_MISMATCH"
+  });
+  // In 0.x a minor release may change meaning, so major.minor is what must be known.
+  var KNOWN_VERSIONS = Object.freeze({ methodology_version: "0.2", evidence_layer_version: "0.1" });
+  var MAX_REVIEW_AGE_DAYS = 90;
+
+  function versionLine(version) {
+    var match = /^(\d+)\.(\d+)/.exec(String(version || ""));
+    return match ? match[1] + "." + match[2] : null;
+  }
+
+  function reason(code, message) {
+    return { code: code, message: message };
+  }
+
+  function datasetReasons(context) {
+    var dataset = context.dataset || {};
+    var reasons = [];
+    Object.keys(KNOWN_VERSIONS).forEach(function (field) {
+      if (versionLine(dataset[field]) !== KNOWN_VERSIONS[field]) {
+        reasons.push(reason(RELIANCE_REASONS.UNKNOWN_VERSION, field + " " + String(dataset[field]) + " is not known."));
+      }
+    });
+    var age = (Date.parse(context.today) - Date.parse(dataset.last_evidence_review)) / 86400000;
+    if (!(age >= 0 && age <= MAX_REVIEW_AGE_DAYS)) {
+      reasons.push(reason(RELIANCE_REASONS.STALE, "The last evidence review is missing, in the future, or too old."));
+    }
+    if (!context.comparison || context.comparison.status !== "matches") {
+      reasons.push(reason(RELIANCE_REASONS.SUMMARY_MISMATCH, "The data is not verified against summary.json."));
+    }
+    return reasons;
+  }
+
+  /*
+   * Whether a sourceRoots() result may be relied on. Denies unless every check passes.
+   * context is { dataset, comparison, today }, comparison from comparePublishedSummary().
+   */
+  function relianceDecision(roots, context) {
+    var verdict = roots && typeof roots.verdict === "string" ? roots.verdict : null;
+    var reasons = datasetReasons(context || {});
+    if (!isConfirmed(verdict)) {
+      reasons.push(reason(RELIANCE_REASONS.NOT_CONFIRMED, "This record is " + String(verdict) + "."));
+    }
+    var pending = roots && Array.isArray(roots.pending_sources) ? roots.pending_sources : [];
+    if (pending.length) {
+      var r = reason(RELIANCE_REASONS.PENDING_SOURCES, "Sources still to annotate.");
+      r.sources = pending.map(function (source) {
+        return typeof source.id === "string" ? source.id : String(source.url || "");
+      });
+      reasons.push(r);
+    }
+    return { allowed: reasons.length === 0, verdict: verdict, reasons: reasons };
   }
 
   function normalizePublisher(value) {
@@ -1095,6 +1194,7 @@
     groupByAxis: groupByAxis,
     averageDisclosureLag: averageDisclosureLag,
     comparePublishedSummary: comparePublishedSummary,
+    canonicalJson: canonicalJson,
     vulnerabilityDefinition: vulnerabilityDefinition,
     filterRecords: filterRecords,
     filterOptions: filterOptions,
@@ -1104,6 +1204,10 @@
     PROVENANCE_KINDS: PROVENANCE_KINDS,
     PROVENANCE_VERDICTS: PROVENANCE_VERDICTS,
     verdictDefinition: verdictDefinition,
+    isConfirmed: isConfirmed,
+    RELIANCE_REASONS: RELIANCE_REASONS,
+    KNOWN_VERSIONS: KNOWN_VERSIONS,
+    relianceDecision: relianceDecision,
     EXTERNAL_ROOT_PREFIXES: EXTERNAL_ROOT_PREFIXES,
     EXTERNAL_ROOT_KEY: EXTERNAL_ROOT_KEY,
     SOURCE_ID: SOURCE_ID,
